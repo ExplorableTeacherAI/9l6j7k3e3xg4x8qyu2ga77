@@ -1,4 +1,501 @@
 {
-  "version": 2,
-  "blockIds": []
+  "version": 3,
+  "blockIds": [
+    "introduction-title",
+    "introduction-hook",
+    "introduction-promise",
+    "block-1787993635804",
+    "introduction-prerequisites",
+    "flat-points-heading",
+    "flat-points-setup",
+    "flat-points-derivative",
+    "flat-points-zeros",
+    "flat-points-visual",
+    "flat-points-coordinates",
+    "flat-points-question-partner",
+    "flat-points-question-asymptote",
+    "sign-test-heading",
+    "sign-test-setup",
+    "sign-test-derivative",
+    "sign-test-stretches",
+    "sign-test-visual",
+    "sign-test-reading",
+    "sign-test-question-classify",
+    "sign-test-question-repeated",
+    "bend-heading",
+    "bend-setup",
+    "bend-second-derivative",
+    "bend-stretches",
+    "bend-visual",
+    "bend-line-visual",
+    "bend-reading",
+    "bend-question-candidate",
+    "bend-question-nochange",
+    "sketch-heading",
+    "sketch-setup",
+    "sketch-visual",
+    "sketch-tails",
+    "wrapping-up-heading",
+    "wrapping-up-routine",
+    "wrapping-up-second-half",
+    "wrapping-up-next"
+  ],
+  "rows": [
+    {
+      "id": "layout-introduction-title",
+      "type": "stack",
+      "columns": [
+        [
+          "introduction-title"
+        ]
+      ],
+      "props": {
+        "maxWidth": "xl"
+      }
+    },
+    {
+      "id": "layout-introduction-hook",
+      "type": "stack",
+      "columns": [
+        [
+          "introduction-hook"
+        ]
+      ],
+      "props": {
+        "maxWidth": "xl"
+      }
+    },
+    {
+      "id": "layout-introduction-promise",
+      "type": "stack",
+      "columns": [
+        [
+          "introduction-promise"
+        ]
+      ],
+      "props": {
+        "maxWidth": "xl"
+      }
+    },
+    {
+      "id": "layout-block-1787993635804",
+      "type": "stack",
+      "columns": [
+        [
+          "block-1787993635804"
+        ]
+      ],
+      "props": {
+        "maxWidth": "xl"
+      }
+    },
+    {
+      "id": "layout-introduction-prerequisites",
+      "type": "stack",
+      "columns": [
+        [
+          "introduction-prerequisites"
+        ]
+      ],
+      "props": {
+        "maxWidth": "xl"
+      }
+    },
+    {
+      "id": "layout-flat-points-heading",
+      "type": "stack",
+      "columns": [
+        [
+          "flat-points-heading"
+        ]
+      ],
+      "props": {
+        "maxWidth": "xl"
+      }
+    },
+    {
+      "id": "layout-flat-points-setup",
+      "type": "stack",
+      "columns": [
+        [
+          "flat-points-setup"
+        ]
+      ],
+      "props": {
+        "maxWidth": "xl"
+      }
+    },
+    {
+      "id": "layout-flat-points-derivative",
+      "type": "stack",
+      "columns": [
+        [
+          "flat-points-derivative"
+        ]
+      ],
+      "props": {
+        "maxWidth": "xl"
+      }
+    },
+    {
+      "id": "layout-flat-points-zeros",
+      "type": "stack",
+      "columns": [
+        [
+          "flat-points-zeros"
+        ]
+      ],
+      "props": {
+        "maxWidth": "xl"
+      }
+    },
+    {
+      "id": "layout-flat-points-visual",
+      "type": "stack",
+      "columns": [
+        [
+          "flat-points-visual"
+        ]
+      ],
+      "props": {
+        "maxWidth": "xl"
+      }
+    },
+    {
+      "id": "layout-flat-points-coordinates",
+      "type": "stack",
+      "columns": [
+        [
+          "flat-points-coordinates"
+        ]
+      ],
+      "props": {
+        "maxWidth": "xl"
+      }
+    },
+    {
+      "id": "layout-flat-points-question-partner",
+      "type": "stack",
+      "columns": [
+        [
+          "flat-points-question-partner"
+        ]
+      ],
+      "props": {
+        "maxWidth": "xl"
+      }
+    },
+    {
+      "id": "layout-flat-points-question-asymptote",
+      "type": "stack",
+      "columns": [
+        [
+          "flat-points-question-asymptote"
+        ]
+      ],
+      "props": {
+        "maxWidth": "xl"
+      }
+    },
+    {
+      "id": "layout-sign-test-heading",
+      "type": "stack",
+      "columns": [
+        [
+          "sign-test-heading"
+        ]
+      ],
+      "props": {
+        "maxWidth": "xl"
+      }
+    },
+    {
+      "id": "layout-sign-test-setup",
+      "type": "stack",
+      "columns": [
+        [
+          "sign-test-setup"
+        ]
+      ],
+      "props": {
+        "maxWidth": "xl"
+      }
+    },
+    {
+      "id": "layout-sign-test-derivative",
+      "type": "stack",
+      "columns": [
+        [
+          "sign-test-derivative"
+        ]
+      ],
+      "props": {
+        "maxWidth": "xl"
+      }
+    },
+    {
+      "id": "layout-sign-test-stretches",
+      "type": "stack",
+      "columns": [
+        [
+          "sign-test-stretches"
+        ]
+      ],
+      "props": {
+        "maxWidth": "xl"
+      }
+    },
+    {
+      "id": "layout-sign-test-visual",
+      "type": "stack",
+      "columns": [
+        [
+          "sign-test-visual"
+        ]
+      ],
+      "props": {
+        "maxWidth": "xl"
+      }
+    },
+    {
+      "id": "layout-sign-test-reading",
+      "type": "stack",
+      "columns": [
+        [
+          "sign-test-reading"
+        ]
+      ],
+      "props": {
+        "maxWidth": "xl"
+      }
+    },
+    {
+      "id": "layout-sign-test-question-classify",
+      "type": "stack",
+      "columns": [
+        [
+          "sign-test-question-classify"
+        ]
+      ],
+      "props": {
+        "maxWidth": "xl"
+      }
+    },
+    {
+      "id": "layout-sign-test-question-repeated",
+      "type": "stack",
+      "columns": [
+        [
+          "sign-test-question-repeated"
+        ]
+      ],
+      "props": {
+        "maxWidth": "xl"
+      }
+    },
+    {
+      "id": "layout-bend-heading",
+      "type": "stack",
+      "columns": [
+        [
+          "bend-heading"
+        ]
+      ],
+      "props": {
+        "maxWidth": "xl"
+      }
+    },
+    {
+      "id": "layout-bend-setup",
+      "type": "stack",
+      "columns": [
+        [
+          "bend-setup"
+        ]
+      ],
+      "props": {
+        "maxWidth": "xl"
+      }
+    },
+    {
+      "id": "layout-bend-second-derivative",
+      "type": "stack",
+      "columns": [
+        [
+          "bend-second-derivative"
+        ]
+      ],
+      "props": {
+        "maxWidth": "xl"
+      }
+    },
+    {
+      "id": "layout-bend-stretches",
+      "type": "stack",
+      "columns": [
+        [
+          "bend-stretches"
+        ]
+      ],
+      "props": {
+        "maxWidth": "xl"
+      }
+    },
+    {
+      "id": "layout-bend-curve-view",
+      "type": "stack",
+      "columns": [
+        [
+          "bend-visual"
+        ]
+      ],
+      "props": {
+        "maxWidth": "xl"
+      }
+    },
+    {
+      "id": "layout-bend-line-view",
+      "type": "stack",
+      "columns": [
+        [
+          "bend-line-visual"
+        ]
+      ],
+      "props": {
+        "maxWidth": "xl"
+      }
+    },
+    {
+      "id": "layout-bend-reading",
+      "type": "stack",
+      "columns": [
+        [
+          "bend-reading"
+        ]
+      ],
+      "props": {
+        "maxWidth": "xl"
+      }
+    },
+    {
+      "id": "layout-bend-question-candidate",
+      "type": "stack",
+      "columns": [
+        [
+          "bend-question-candidate"
+        ]
+      ],
+      "props": {
+        "maxWidth": "xl"
+      }
+    },
+    {
+      "id": "layout-bend-question-nochange",
+      "type": "stack",
+      "columns": [
+        [
+          "bend-question-nochange"
+        ]
+      ],
+      "props": {
+        "maxWidth": "xl"
+      }
+    },
+    {
+      "id": "layout-sketch-heading",
+      "type": "stack",
+      "columns": [
+        [
+          "sketch-heading"
+        ]
+      ],
+      "props": {
+        "maxWidth": "xl"
+      }
+    },
+    {
+      "id": "layout-sketch-setup",
+      "type": "stack",
+      "columns": [
+        [
+          "sketch-setup"
+        ]
+      ],
+      "props": {
+        "maxWidth": "xl"
+      }
+    },
+    {
+      "id": "layout-sketch-visual",
+      "type": "stack",
+      "columns": [
+        [
+          "sketch-visual"
+        ]
+      ],
+      "props": {
+        "maxWidth": "xl"
+      }
+    },
+    {
+      "id": "layout-sketch-tails",
+      "type": "stack",
+      "columns": [
+        [
+          "sketch-tails"
+        ]
+      ],
+      "props": {
+        "maxWidth": "xl"
+      }
+    },
+    {
+      "id": "layout-wrapping-up-heading",
+      "type": "stack",
+      "columns": [
+        [
+          "wrapping-up-heading"
+        ]
+      ],
+      "props": {
+        "maxWidth": "xl"
+      }
+    },
+    {
+      "id": "layout-wrapping-up-routine",
+      "type": "stack",
+      "columns": [
+        [
+          "wrapping-up-routine"
+        ]
+      ],
+      "props": {
+        "maxWidth": "xl"
+      }
+    },
+    {
+      "id": "layout-wrapping-up-second-half",
+      "type": "stack",
+      "columns": [
+        [
+          "wrapping-up-second-half"
+        ]
+      ],
+      "props": {
+        "maxWidth": "xl"
+      }
+    },
+    {
+      "id": "layout-wrapping-up-next",
+      "type": "stack",
+      "columns": [
+        [
+          "wrapping-up-next"
+        ]
+      ],
+      "props": {
+        "maxWidth": "xl"
+      }
+    }
+  ]
 }
