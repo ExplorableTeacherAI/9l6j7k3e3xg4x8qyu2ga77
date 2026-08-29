@@ -1,9 +1,490 @@
-import { type ReactElement } from "react";
+import { useCallback, useEffect, useRef, useState, type ReactElement } from "react";
 import { Block } from "@/components/templates";
 import { StackLayout } from "@/components/layouts";
-import { EditableH2, EditableParagraph } from "@/components/atoms";
-import { FormulaBlock } from "@/components/molecules";
-import { VisualOptionCards } from "@/components/organisms";
+import {
+    EditableH2,
+    EditableParagraph,
+    InlineScrubbleNumber,
+    InlineLinkedHighlight,
+    InlineClozeInput,
+    InlineClozeChoice,
+    InlineFeedback,
+    InteractionHintSequence,
+} from "@/components/atoms";
+import { Figure, FormulaBlock } from "@/components/molecules";
+import { useVar, useSetVar } from "@/stores";
+import {
+    getVariableInfo,
+    numberPropsFromDefinition,
+    clozePropsFromDefinition,
+    choicePropsFromDefinition,
+    linkedHighlightPropsFromDefinition,
+} from "../variables";
+import { clamp } from "@/lib/motion";
+
+/* ────────────────────────────────────────────────────────────────────────────
+ * A LINKED PAIR.
+ *
+ * Above: the curve y = 2x/(1 + x²), cut into four pieces at −√3, 0 and √3.
+ * Below: the bend line, the same four stretches with a sign box each.
+ *
+ * Both views read the SAME store variables — bendTestX, bendTestedValues and
+ * bendHighlight — so neither tells the other anything; they simply agree. They
+ * share one x-mapping, so a stretch sits directly above its own sign box, and
+ * hovering either one pops its counterpart in the other view.
+ * ──────────────────────────────────────────────────────────────────────────── */
+
+const ROOT_THREE = Math.sqrt(3);
+const X_MIN = -3.4;
+const X_MAX = 3.4;
+const VIEW_WIDTH = 560;
+const PAD_LEFT = 44;
+const PAD_RIGHT = 44;
+const PLOT_WIDTH = VIEW_WIDTH - PAD_LEFT - PAD_RIGHT;
+
+const CUTS = [-ROOT_THREE, 0, ROOT_THREE];
+const STRETCH_EDGES = [X_MIN, -ROOT_THREE, 0, ROOT_THREE, X_MAX];
+const STRETCH_LABELS = ["x < −√3", "−√3 < x < 0", "0 < x < √3", "x > √3"];
+
+const UP_COLOR = "#62D0AD";
+const DOWN_COLOR = "#8E90F5";
+const UNTESTED_COLOR = "#CBD5E1";
+const INK = "#334155";
+const STRUCTURE = "#94A3B8";
+const RULE = "#E2E8F0";
+
+const toScreenX = (x: number) => PAD_LEFT + ((x - X_MIN) / (X_MAX - X_MIN)) * PLOT_WIDTH;
+const curveY = (x: number) => (2 * x) / (1 + x * x);
+const secondDerivative = (x: number) => (4 * x * (x * x - 3)) / Math.pow(1 + x * x, 3);
+
+const formatBend = (value: number) => value.toFixed(2);
+
+const stretchIndexFor = (x: number) => {
+    for (let index = 0; index < 4; index += 1) {
+        if (x <= STRETCH_EDGES[index + 1]) return index;
+    }
+    return 3;
+};
+
+const familyForStretch = (index: number, tested: number[]) => {
+    const match = tested.find((value) => stretchIndexFor(value) === index);
+    if (match === undefined) return null;
+    return secondDerivative(match) > 0 ? "concaveUp" : "concaveDown";
+};
+
+const colorForFamily = (family: string | null) =>
+    family === "concaveUp" ? UP_COLOR : family === "concaveDown" ? DOWN_COLOR : UNTESTED_COLOR;
+
+function useBendState() {
+    const testX = useVar<number>("bendTestX", -3);
+    const highlight = useVar<string>("bendHighlight", "");
+    const tested = useVar<number[]>("bendTestedValues", []);
+    const setVar = useSetVar();
+
+    const isActive = (index: number) => {
+        if (!highlight) return false;
+        if (highlight === `stretch-${index}`) return true;
+        return highlight === familyForStretch(index, tested);
+    };
+    const dimFor = (index: number) => (highlight && !isActive(index) ? 0.32 : 1);
+    const restDim = highlight ? 0.32 : 1;
+
+    const hoverProps = (index: number) => ({
+        onPointerEnter: () => setVar("bendHighlight", `stretch-${index}`),
+        onPointerLeave: () => setVar("bendHighlight", ""),
+    });
+
+    return { testX, highlight, tested, setVar, isActive, dimFor, restDim, hoverProps };
+}
+
+const reset = (setVar: (name: string, value: unknown) => void) => {
+    setVar("bendTestX", -3);
+    setVar("bendHighlight", "");
+    setVar("bendTestedValues", []);
+};
+
+/* ── View A — the curve ──────────────────────────────────────────────────── */
+
+const CURVE_HEIGHT = 250;
+const CURVE_TOP = 30;
+const CURVE_PLOT_HEIGHT = 190;
+const CURVE_Y_MIN = -1.15;
+const CURVE_Y_MAX = 1.15;
+const toCurveScreenY = (y: number) =>
+    CURVE_TOP + ((CURVE_Y_MAX - y) / (CURVE_Y_MAX - CURVE_Y_MIN)) * CURVE_PLOT_HEIGHT;
+
+const stretchPath = (index: number) => {
+    const from = STRETCH_EDGES[index];
+    const to = STRETCH_EDGES[index + 1];
+    const points: string[] = [];
+    const steps = 60;
+    for (let step = 0; step <= steps; step += 1) {
+        const x = from + ((to - from) * step) / steps;
+        points.push(`${toScreenX(x).toFixed(2)},${toCurveScreenY(curveY(x)).toFixed(2)}`);
+    }
+    return `M ${points.join(" L ")}`;
+};
+
+function BendCurveDrawing() {
+    const { testX, tested, setVar, isActive, dimFor, restDim, hoverProps } = useBendState();
+    const [dragging, setDragging] = useState(false);
+    const svgRef = useRef<SVGSVGElement>(null);
+
+    // One source of truth: this effect is the only place a stretch is recorded.
+    useEffect(() => {
+        const index = stretchIndexFor(testX);
+        if (tested.some((value) => stretchIndexFor(value) === index)) return;
+        setVar("bendTestedValues", [...tested, testX]);
+    }, [testX, tested, setVar]);
+
+    const updateFromPointer = useCallback(
+        (clientX: number) => {
+            const svg = svgRef.current;
+            if (!svg) return;
+            const rect = svg.getBoundingClientRect();
+            const localX = ((clientX - rect.left) / rect.width) * VIEW_WIDTH;
+            const mathX = X_MIN + ((localX - PAD_LEFT) / PLOT_WIDTH) * (X_MAX - X_MIN);
+            setVar("bendTestX", Math.round(clamp(mathX, -3, 3) * 10) / 10);
+        },
+        [setVar],
+    );
+
+    const dotX = toScreenX(testX);
+    const dotY = toCurveScreenY(curveY(testX));
+    const bendValue = secondDerivative(testX);
+
+    return (
+        <svg
+            ref={svgRef}
+            viewBox={`0 0 ${VIEW_WIDTH} ${CURVE_HEIGHT}`}
+            className="block w-full"
+            style={{ touchAction: "none" }}
+        >
+            <defs>
+                <filter id="bend-dot-shadow" x="-50%" y="-50%" width="200%" height="200%">
+                    <feDropShadow dx="0" dy="1" stdDeviation="1.5" floodColor="#0F172A" floodOpacity="0.25" />
+                </filter>
+            </defs>
+
+            <g opacity={restDim} style={{ transition: "opacity 150ms ease-out" }}>
+                <text x={PAD_LEFT} y={20} fill={INK} fontSize="12">
+                    y = 2x / (1 + x²)
+                </text>
+                <text
+                    x={VIEW_WIDTH - 24}
+                    y={20}
+                    fill={colorForFamily(bendValue > 0 ? "concaveUp" : "concaveDown")}
+                    fontSize="12"
+                    textAnchor="end"
+                    style={{ fontVariantNumeric: "tabular-nums" }}
+                >
+                    {`d²y/dx² = ${formatBend(bendValue)}`}
+                </text>
+                <line
+                    x1={PAD_LEFT}
+                    y1={toCurveScreenY(0)}
+                    x2={PAD_LEFT + PLOT_WIDTH}
+                    y2={toCurveScreenY(0)}
+                    stroke={STRUCTURE}
+                    strokeWidth="1.5"
+                    strokeLinecap="round"
+                />
+                <line
+                    x1={toScreenX(0)}
+                    y1={CURVE_TOP}
+                    x2={toScreenX(0)}
+                    y2={CURVE_TOP + CURVE_PLOT_HEIGHT}
+                    stroke={STRUCTURE}
+                    strokeWidth="1.5"
+                    strokeLinecap="round"
+                />
+                {CUTS.map((cut) => (
+                    <line
+                        key={`cut-${cut}`}
+                        x1={toScreenX(cut)}
+                        y1={CURVE_TOP}
+                        x2={toScreenX(cut)}
+                        y2={CURVE_TOP + CURVE_PLOT_HEIGHT}
+                        stroke={RULE}
+                        strokeWidth="1.5"
+                        strokeDasharray="4 5"
+                    />
+                ))}
+            </g>
+
+            {[0, 1, 2, 3].map((index) => {
+                const family = familyForStretch(index, tested);
+                const color = colorForFamily(family);
+                const active = isActive(index);
+                const left = toScreenX(STRETCH_EDGES[index]);
+                const right = toScreenX(STRETCH_EDGES[index + 1]);
+                return (
+                    <g
+                        key={`curve-stretch-${index}`}
+                        opacity={dimFor(index)}
+                        style={{ transition: "opacity 150ms ease-out" }}
+                        {...hoverProps(index)}
+                    >
+                        <rect
+                            x={left}
+                            y={CURVE_TOP}
+                            width={right - left}
+                            height={CURVE_PLOT_HEIGHT}
+                            fill={family ? color : "transparent"}
+                            opacity={active ? 0.16 : 0.07}
+                            style={{ transition: "opacity 150ms ease-out" }}
+                        />
+                        {active && (
+                            <path d={stretchPath(index)} fill="none" stroke={color} strokeWidth="10" opacity={0.28} strokeLinecap="round" />
+                        )}
+                        <path
+                            d={stretchPath(index)}
+                            fill="none"
+                            stroke={color}
+                            strokeWidth={active ? 4.2 : family ? 3 : 2}
+                            strokeDasharray={family ? undefined : "5 6"}
+                            strokeLinecap="round"
+                            style={{ transition: "stroke-width 150ms ease-out" }}
+                        />
+                    </g>
+                );
+            })}
+
+            <g opacity={restDim} style={{ transition: "opacity 150ms ease-out" }}>
+                <circle cx={dotX} cy={dotY} r={dragging ? 10.5 : 9} fill={UP_COLOR} filter="url(#bend-dot-shadow)" />
+                <circle
+                    cx={dotX}
+                    cy={dotY}
+                    r={24}
+                    fill="transparent"
+                    style={{ cursor: dragging ? "grabbing" : "grab", touchAction: "none" }}
+                    onPointerDown={(event) => {
+                        event.currentTarget.setPointerCapture(event.pointerId);
+                        setDragging(true);
+                    }}
+                    onPointerMove={(event) => {
+                        if (dragging) updateFromPointer(event.clientX);
+                    }}
+                    onPointerUp={() => setDragging(false)}
+                    onPointerCancel={() => setDragging(false)}
+                />
+            </g>
+        </svg>
+    );
+}
+
+function BendCurveFigure() {
+    const setVar = useSetVar();
+    return (
+        <Figure
+            id="bend-curve-view"
+            onReset={() => reset(setVar)}
+            caption="The curve, cut into four pieces at −√3, 0 and √3. A piece stays faint and dashed until its stretch has been tested on the bend line below."
+        >
+            <BendCurveDrawing />
+            <InteractionHintSequence
+                hintKey="bend-curve-drag"
+                steps={[
+                    {
+                        gesture: "drag-horizontal",
+                        label: "Drag the teal dot along the curve",
+                        position: { x: "14%", y: "62%" },
+                        dragPath: { type: "line", startOffset: { x: -8, y: 0 }, endOffset: { x: 32, y: -10 } },
+                    },
+                ]}
+            />
+        </Figure>
+    );
+}
+
+/* ── View B — the bend line ──────────────────────────────────────────────── */
+
+const LINE_HEIGHT = 160;
+const TRACK_Y = 36;
+const BOX_TOP = 64;
+const BOX_HEIGHT = 40;
+const BOX_WIDTH = 46;
+const RANGE_LABEL_Y = 122;
+const VERDICT_Y = 144;
+
+function BendLineDrawing() {
+    const { testX, tested, setVar, isActive, dimFor, restDim, hoverProps } = useBendState();
+    const [dragging, setDragging] = useState(false);
+    const svgRef = useRef<SVGSVGElement>(null);
+
+    const updateFromPointer = useCallback(
+        (clientX: number) => {
+            const svg = svgRef.current;
+            if (!svg) return;
+            const rect = svg.getBoundingClientRect();
+            const localX = ((clientX - rect.left) / rect.width) * VIEW_WIDTH;
+            const mathX = X_MIN + ((localX - PAD_LEFT) / PLOT_WIDTH) * (X_MAX - X_MIN);
+            setVar("bendTestX", Math.round(clamp(mathX, -3, 3) * 10) / 10);
+        },
+        [setVar],
+    );
+
+    const markerX = toScreenX(testX);
+    const labelCentre = clamp(markerX, PAD_LEFT + 30, VIEW_WIDTH - PAD_RIGHT - 30);
+
+    return (
+        <svg
+            ref={svgRef}
+            viewBox={`0 0 ${VIEW_WIDTH} ${LINE_HEIGHT}`}
+            className="block w-full"
+            style={{ touchAction: "none" }}
+        >
+            <defs>
+                <filter id="bend-marker-shadow" x="-50%" y="-50%" width="200%" height="200%">
+                    <feDropShadow dx="0" dy="1" stdDeviation="1.5" floodColor="#0F172A" floodOpacity="0.25" />
+                </filter>
+            </defs>
+
+            <g opacity={restDim} style={{ transition: "opacity 150ms ease-out" }}>
+                <line
+                    x1={PAD_LEFT}
+                    y1={TRACK_Y}
+                    x2={PAD_LEFT + PLOT_WIDTH}
+                    y2={TRACK_Y}
+                    stroke={RULE}
+                    strokeWidth="2"
+                    strokeLinecap="round"
+                />
+                {CUTS.map((cut, index) => (
+                    <g key={`bend-cut-${index}`}>
+                        <line
+                            x1={toScreenX(cut)}
+                            y1={TRACK_Y - 6}
+                            x2={toScreenX(cut)}
+                            y2={TRACK_Y + 6}
+                            stroke={STRUCTURE}
+                            strokeWidth="1.5"
+                            strokeLinecap="round"
+                        />
+                        <text x={toScreenX(cut)} y={TRACK_Y + 20} fill={STRUCTURE} fontSize="10" textAnchor="middle">
+                            {index === 0 ? "−√3" : index === 1 ? "0" : "√3"}
+                        </text>
+                    </g>
+                ))}
+                <text
+                    x={labelCentre}
+                    y={TRACK_Y - 16}
+                    fill={INK}
+                    fontSize="12"
+                    textAnchor="middle"
+                    style={{ fontVariantNumeric: "tabular-nums" }}
+                >
+                    {`x = ${testX.toFixed(1)}`}
+                </text>
+                <circle cx={markerX} cy={TRACK_Y} r={dragging ? 10.5 : 9} fill={UP_COLOR} filter="url(#bend-marker-shadow)" />
+                <circle
+                    cx={markerX}
+                    cy={TRACK_Y}
+                    r={24}
+                    fill="transparent"
+                    style={{ cursor: dragging ? "grabbing" : "grab", touchAction: "none" }}
+                    onPointerDown={(event) => {
+                        event.currentTarget.setPointerCapture(event.pointerId);
+                        setDragging(true);
+                    }}
+                    onPointerMove={(event) => {
+                        if (dragging) updateFromPointer(event.clientX);
+                    }}
+                    onPointerUp={() => setDragging(false)}
+                    onPointerCancel={() => setDragging(false)}
+                />
+            </g>
+
+            {[0, 1, 2, 3].map((index) => {
+                const family = familyForStretch(index, tested);
+                const color = colorForFamily(family);
+                const active = isActive(index);
+                const centre = (toScreenX(STRETCH_EDGES[index]) + toScreenX(STRETCH_EDGES[index + 1])) / 2;
+                return (
+                    <g
+                        key={`bend-box-${index}`}
+                        opacity={dimFor(index)}
+                        style={{ transition: "opacity 150ms ease-out" }}
+                        {...hoverProps(index)}
+                    >
+                        <rect
+                            x={centre - BOX_WIDTH / 2}
+                            y={BOX_TOP}
+                            width={BOX_WIDTH}
+                            height={BOX_HEIGHT}
+                            rx="6"
+                            fill={family ? color : "#FFFFFF"}
+                            fillOpacity={family ? (active ? 0.35 : 0.15) : 1}
+                            stroke={family ? color : UNTESTED_COLOR}
+                            strokeWidth={active ? 3 : 1.5}
+                            style={{ transition: "stroke-width 150ms ease-out, fill-opacity 150ms ease-out" }}
+                        />
+                        <text
+                            x={centre}
+                            y={BOX_TOP + 28}
+                            fill={family ? color : STRUCTURE}
+                            fontSize={family ? 22 : 18}
+                            fontWeight="600"
+                            textAnchor="middle"
+                            opacity={family ? 1 : 0.5}
+                        >
+                            {family === "concaveUp" ? "+" : family === "concaveDown" ? "−" : "?"}
+                        </text>
+                        <text x={centre} y={RANGE_LABEL_Y} fill={INK} fontSize="11" textAnchor="middle">
+                            {STRETCH_LABELS[index]}
+                        </text>
+                    </g>
+                );
+            })}
+
+            {CUTS.map((cut, index) => {
+                const leftFamily = familyForStretch(index, tested);
+                const rightFamily = familyForStretch(index + 1, tested);
+                if (!leftFamily || !rightFamily || leftFamily === rightFamily) return null;
+                return (
+                    <text
+                        key={`verdict-${index}`}
+                        x={toScreenX(cut)}
+                        y={VERDICT_Y}
+                        fill={INK}
+                        fontSize="10"
+                        fontWeight="600"
+                        textAnchor="middle"
+                        opacity={restDim}
+                    >
+                        inflection
+                    </text>
+                );
+            })}
+        </svg>
+    );
+}
+
+function BendLineFigure() {
+    const setVar = useSetVar();
+    return (
+        <Figure
+            id="bend-sign-line"
+            onReset={() => reset(setVar)}
+            caption="Drag the teal marker into a stretch and its box fills with the sign of d²y/dx², while the matching piece of curve above firms up. Where two neighbouring signs disagree, the cut between them is a point of inflection."
+        >
+            <BendLineDrawing />
+            <InteractionHintSequence
+                hintKey="bend-line-drag"
+                steps={[
+                    {
+                        gesture: "drag-horizontal",
+                        label: "Drag the marker into each stretch",
+                        position: { x: "14%", y: "26%" },
+                        dragPath: { type: "line", startOffset: { x: -10, y: 0 }, endOffset: { x: 34, y: 0 } },
+                    },
+                ]}
+            />
+        </Figure>
+    );
+}
+
+/* ──────────────────────────────────────────────────────────────────────────── */
 
 export const whereTheBendChangesBlocks: ReactElement[] = [
     <StackLayout key="layout-bend-heading" maxWidth="xl">
@@ -17,9 +498,9 @@ export const whereTheBendChangesBlocks: ReactElement[] = [
     <StackLayout key="layout-bend-setup" maxWidth="xl">
         <Block id="bend-setup" padding="sm">
             <EditableParagraph id="para-bend-setup" blockId="bend-setup">
-                The first derivative says which way the curve is heading. The second says how that
-                heading is changing, and that is the curve's bend. Differentiating once more and
-                factorising hands us three places where the bend might switch.
+                The first derivative says which way the curve is heading; the second says how that
+                heading is changing. That is the curve's bend, and differentiating again hands us
+                three places where it might switch.
             </EditableParagraph>
         </Block>
     </StackLayout>,
@@ -33,59 +514,126 @@ export const whereTheBendChangesBlocks: ReactElement[] = [
     <StackLayout key="layout-bend-stretches" maxWidth="xl">
         <Block id="bend-stretches" padding="sm">
             <EditableParagraph id="para-bend-stretches" blockId="bend-stretches">
-                So the second derivative is zero at x = 0, x = √3 and x = −√3, though zero on its own
-                proves nothing. A point of inflection needs the bend to genuinely change sign, so the
-                four stretches these three values create each need testing.
+                So the second derivative is zero at x = 0, x = √3 and x = −√3, but zero alone proves
+                nothing. A point of inflection needs the bend to actually change sign, so drag the
+                teal marker into each of the four stretches and watch the curve above firm up.
             </EditableParagraph>
         </Block>
     </StackLayout>,
 
-    <StackLayout key="layout-bend-visual" maxWidth="xl">
-        <Block id="bend-visual" padding="sm">
-            <VisualOptionCards
-                blockId="bend-visual"
-                cards={[
-                    {
-                        id: "hugging-circle",
-                        title: "A large circle hugging the inside of the curve, flipping to the other side as it travels",
-                        looks: "Imagine the curve with a big faint circle nestled into its bend, touching at a single point and curving the same way the curve does there. As that touching point travels, the circle swells, shrinks, and at certain spots swings across to hug the curve from the other side instead.",
-                        manipulate: "Slide the touching point along the curve and stop wherever the circle swings across to the other side",
-                        reveals: "The circle changes sides at exactly three places, and those three places are where the curve stops bending one way and starts bending the other",
-                        paradigm: "temporal",
-                        recommended: true,
-                    },
-                    {
-                        id: "bend-sign-line",
-                        title: "A curve above and a bend line beneath, cut at the three candidate points",
-                        looks: "Imagine the x-axis beneath the curve cut at −√3, 0 and √3, leaving four stretches with an empty box above each. Dropping a test value into a stretch fills its box with a plus or a minus, and the matching piece of the curve above shades as a smile or a frown.",
-                        manipulate: "Drop a test value into each of the four stretches and watch the boxes and the shaded pieces of curve appear",
-                        reveals: "The bend flips at all three candidates here, so all three really are points of inflection",
-                        paradigm: "constructivist",
-                        secondView: {
-                            shows: "The curve, with each stretch shading as cup-up or cup-down once its sign is known",
-                            role: "constructing",
-                            syncedBy: "bendStretchResults, plus a shared hover highlight linking each box to its piece of the curve",
-                        },
-                    },
-                    {
-                        id: "smile-or-frown-guess",
-                        title: "Four blank stretches of curve waiting to be labelled as a smile or a frown",
-                        looks: "Imagine the curve drawn as four separate faint pieces split at −√3, 0 and √3, with a smile card and a frown card sitting beside each piece. Once a card is placed on a piece, that piece firms up in the shape the card claims, ready to be checked against the real curve.",
-                        manipulate: "Place a smile or a frown card on each of the four pieces before the real curve is revealed",
-                        reveals: "The bend cannot repeat itself across a genuine inflection point, so smile and frown have to alternate",
-                        paradigm: "prediction",
-                    },
-                ]}
-            />
+    <StackLayout key="layout-bend-curve-view" maxWidth="xl">
+        <Block id="bend-visual" padding="sm" hasVisualization>
+            <BendCurveFigure />
+        </Block>
+    </StackLayout>,
+
+    <StackLayout key="layout-bend-line-view" maxWidth="xl">
+        <Block id="bend-line-visual" padding="sm" hasVisualization>
+            <BendLineFigure />
         </Block>
     </StackLayout>,
 
     <StackLayout key="layout-bend-reading" maxWidth="xl">
         <Block id="bend-reading" padding="sm">
             <EditableParagraph id="para-bend-reading" blockId="bend-reading">
-                Wherever the sign flips from positive to negative, or back the other way, the curve
-                really does change its bend. All three candidates pass that test here, giving
-                inflection points at x = −√3, x = 0 and x = √3.
+                Wherever you leave the marker, say x ={" "}
+                <InlineScrubbleNumber
+                    varName="bendTestX"
+                    {...numberPropsFromDefinition(getVariableInfo('bendTestX'))}
+                    formatValue={(v) => v.toFixed(1)}
+                />
+                , the whole stretch bends the same way:{" "}
+                <InlineLinkedHighlight
+                    id="highlight-bend-up"
+                    varName="bendHighlight"
+                    highlightId="concaveUp"
+                    {...linkedHighlightPropsFromDefinition(getVariableInfo('bendHighlight'))}
+                >
+                    upward
+                </InlineLinkedHighlight>{" "}
+                where the sign is plus,{" "}
+                <InlineLinkedHighlight
+                    id="highlight-bend-down"
+                    varName="bendHighlight"
+                    highlightId="concaveDown"
+                    color="#8E90F5"
+                    bgColor="rgba(142, 144, 245, 0.2)"
+                >
+                    downward
+                </InlineLinkedHighlight>{" "}
+                where it is minus. All three candidates flip, so all three really are points of
+                inflection.
+            </EditableParagraph>
+        </Block>
+    </StackLayout>,
+
+    <StackLayout key="layout-bend-question-candidate" maxWidth="xl">
+        <Block id="bend-question-candidate" padding="md">
+            <EditableParagraph id="para-bend-question-candidate" blockId="bend-question-candidate">
+                Try the first step on a new curve. If y = x³ − 6x² then d²y/dx² = 6x − 12, so the only
+                candidate for a point of inflection sits at x ={" "}
+                <InlineFeedback
+                    varName="answerBendCandidate"
+                    correctValue={["2", "x = 2", "x=2"]}
+                    position="terminal"
+                    successMessage="— correct. Solving 6x − 12 = 0 gives the one place where the bend could possibly turn over"
+                    failureMessage="— close."
+                    hint="Set 6x − 12 equal to zero and solve it the way you would any other linear equation"
+                >
+                    <InlineClozeInput
+                        varName="answerBendCandidate"
+                        correctAnswer={["2", "x = 2", "x=2"]}
+                        {...clozePropsFromDefinition(getVariableInfo('answerBendCandidate'))}
+                    />
+                </InlineFeedback>.
+            </EditableParagraph>
+        </Block>
+    </StackLayout>,
+
+    <StackLayout key="layout-bend-question-nochange" maxWidth="xl">
+        <Block id="bend-question-nochange" padding="md">
+            <EditableParagraph id="para-bend-question-nochange" blockId="bend-question-nochange">
+                Here is the catch. For y = x⁴ the second derivative is 12x², which is zero at x = 0,
+                yet testing x = −1 gives 12 and testing x = 1 also gives 12. Across x = 0 the sign{" "}
+                <InlineFeedback
+                    varName="answerBendNoChange"
+                    correctValue="stays the same"
+                    position="terminal"
+                    successMessage="— exactly, and that settles it. The bend never turns over, so x = 0 is not a point of inflection even though the second derivative vanishes there"
+                    failureMessage="— look again at the two test values."
+                    hint="Both tests came out as +12, so compare the two signs rather than the two positions"
+                    visualizationHint={{
+                        blockId: "bend-line-visual",
+                        hintKey: "feedback-bend-no-change",
+                        label: "Discover it yourself",
+                        resetVars: { bendTestX: -3, bendHighlight: "" },
+                        steps: [
+                            {
+                                gesture: "drag-horizontal",
+                                label: "Leave the marker in the far left stretch — that box holds a minus",
+                                position: { x: "18%", y: "26%" },
+                                completionVar: "bendTestX",
+                                completionValue: -2.5,
+                                completionTolerance: 0.7,
+                            },
+                            {
+                                gesture: "drag-horizontal",
+                                label: "Drag it right past −√3 — the sign turns to a plus, and that swap is what an inflection needs",
+                                position: { x: "38%", y: "26%" },
+                                completionVar: "bendTestX",
+                                completionValue: -1,
+                                completionTolerance: 0.6,
+                            },
+                        ],
+                    }}
+                >
+                    <InlineClozeChoice
+                        varName="answerBendNoChange"
+                        correctAnswer="stays the same"
+                        options={["stays the same", "changes", "becomes zero"]}
+                        {...choicePropsFromDefinition(getVariableInfo('answerBendNoChange'))}
+                    />
+                </InlineFeedback>.
             </EditableParagraph>
         </Block>
     </StackLayout>,

@@ -151,6 +151,52 @@ export const variableDefinitions: Record<string, VariableDefinition> = {
         options: ['positive', 'negative', 'zero'],
         color: '#8E90F5',
     },
+    // ─────────────────────────────────────────
+    // SECTION: The Bend, and Where It Changes
+    // ─────────────────────────────────────────
+    bendTestX: {
+        defaultValue: -3,
+        type: 'number',
+        label: 'Bend test value',
+        description: 'x value the student drops into each stretch to test the sign of the second derivative',
+        min: -3,
+        max: 3,
+        step: 0.1,
+        color: '#62D0AD',
+    },
+    bendHighlight: {
+        defaultValue: '',
+        type: 'linkedHighlight',
+        label: 'Bend highlight',
+        description: 'Active highlight linking a sign box to its piece of curve: concaveUp, concaveDown or stretch-N',
+        color: '#62D0AD',
+        bgColor: 'rgba(98, 208, 173, 0.2)',
+    },
+    bendTestedValues: {
+        defaultValue: [],
+        type: 'array',
+        label: 'Tested bend stretches',
+        description: 'The x values the student has dropped the marker into, one per stretch discovered',
+    },
+    answerBendCandidate: {
+        defaultValue: '',
+        type: 'text',
+        label: 'Inflection candidate',
+        description: 'x value where 6x - 12 equals zero',
+        placeholder: '???',
+        correctAnswer: ['2', 'x = 2', 'x=2'],
+        color: '#8E90F5',
+    },
+    answerBendNoChange: {
+        defaultValue: '',
+        type: 'select',
+        label: 'Sign behaviour for x to the fourth',
+        description: 'Whether the sign of 12x^2 changes either side of zero',
+        placeholder: '???',
+        correctAnswer: 'stays the same',
+        options: ['stays the same', 'changes', 'becomes zero'],
+        color: '#8E90F5',
+    },
     answerFlatPointsAsymptote: {
         defaultValue: '',
         type: 'text',
