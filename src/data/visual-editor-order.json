@@ -94,18 +94,7 @@
       "type": "stack",
       "columns": [
         [
-          "flat-points-setup"
-        ]
-      ],
-      "props": {
-        "maxWidth": "xl"
-      }
-    },
-    {
-      "id": "layout-flat-points-derivative",
-      "type": "stack",
-      "columns": [
-        [
+          "flat-points-setup",
           "flat-points-derivative"
         ]
       ],
