@@ -4,7 +4,6 @@
     "introduction-title",
     "introduction-hook",
     "introduction-promise",
-    "block-1787993635804",
     "introduction-prerequisites",
     "flat-points-heading",
     "flat-points-setup",
@@ -71,18 +70,6 @@
       "columns": [
         [
           "introduction-promise"
-        ]
-      ],
-      "props": {
-        "maxWidth": "xl"
-      }
-    },
-    {
-      "id": "layout-block-1787993635804",
-      "type": "stack",
-      "columns": [
-        [
-          "block-1787993635804"
         ]
       ],
       "props": {

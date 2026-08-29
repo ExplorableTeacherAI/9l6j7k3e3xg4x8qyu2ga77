@@ -31,12 +31,6 @@ export const lessonIntroductionBlocks: ReactElement[] = [
         </Block>
     </StackLayout>,
 
-    <StackLayout key="layout-block-1787993635804" maxWidth="xl">
-        <Block id="block-1787993635804" padding="sm">
-            <EditableParagraph id="para-block-1787993635804" blockId="block-1787993635804">/</EditableParagraph>
-        </Block>
-    </StackLayout>,
-
     <StackLayout key="layout-introduction-prerequisites" maxWidth="xl">
         <Block id="introduction-prerequisites" padding="sm">
             <EditableParagraph id="para-introduction-prerequisites" blockId="introduction-prerequisites">
