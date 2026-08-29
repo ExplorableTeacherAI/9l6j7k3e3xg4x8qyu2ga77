@@ -11,6 +11,7 @@ import { findingFlatPointsBlocks } from "./sections/findingFlatPoints";
 import { testingTheSignBlocks } from "./sections/testingTheSign";
 import { whereTheBendChangesBlocks } from "./sections/whereTheBendChanges";
 import { puttingTheSketchTogetherBlocks } from "./sections/puttingTheSketchTogether";
+import { linesNeverReachedBlocks } from "./sections/linesNeverReached";
 import { wrappingUpBlocks } from "./sections/wrappingUp";
 
 export const blocks: ReactElement[] = [
@@ -19,5 +20,6 @@ export const blocks: ReactElement[] = [
     ...testingTheSignBlocks,
     ...whereTheBendChangesBlocks,
     ...puttingTheSketchTogetherBlocks,
+    ...linesNeverReachedBlocks,
     ...wrappingUpBlocks,
 ];

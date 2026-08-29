@@ -235,6 +235,45 @@ export const variableDefinitions: Record<string, VariableDefinition> = {
         options: ['positive', 'negative', 'zero'],
         color: '#8E90F5',
     },
+    // ─────────────────────────────────────────
+    // SECTION: Lines the Curve Never Reaches
+    // ─────────────────────────────────────────
+    asymptoteCurve: {
+        defaultValue: '1 + x\u00B2',
+        type: 'select',
+        label: 'Bottom line of the fraction',
+        description: 'Which denominator the annotated summary curve uses',
+        options: ['1 + x\u00B2', 'x\u00B2 \u2212 1'],
+        color: '#62D0AD',
+        bgColor: 'rgba(98, 208, 173, 0.2)',
+    },
+    asymptoteDotX: {
+        defaultValue: 3.5,
+        type: 'number',
+        label: 'Travelling dot position',
+        description: 'x position of the dot the student drags along the annotated summary curve',
+        min: -5,
+        max: 5,
+        step: 0.1,
+        color: '#62D0AD',
+    },
+    asymptoteHighlight: {
+        defaultValue: '',
+        type: 'linkedHighlight',
+        label: 'Asymptote highlight',
+        description: 'Which dotted asymptote is highlighted: horizontal or vertical',
+        color: '#AC8BF9',
+        bgColor: 'rgba(172, 139, 249, 0.2)',
+    },
+    answerAsymptoteHorizontal: {
+        defaultValue: '',
+        type: 'text',
+        label: 'Horizontal asymptote',
+        description: 'The line the curve levels off toward far from the origin',
+        placeholder: '???',
+        correctAnswer: ['0', 'y = 0', 'y=0'],
+        color: '#8E90F5',
+    },
     answerFlatPointsAsymptote: {
         defaultValue: '',
         type: 'text',
