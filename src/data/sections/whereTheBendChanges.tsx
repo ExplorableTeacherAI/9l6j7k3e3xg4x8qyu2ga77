@@ -52,6 +52,7 @@ const UNTESTED_COLOR = "#CBD5E1";
 const INK = "#334155";
 const STRUCTURE = "#94A3B8";
 const RULE = "#E2E8F0";
+const INFLECTION_COLOR = "#ef4444";
 
 const toScreenX = (x: number) => PAD_LEFT + ((x - X_MIN) / (X_MAX - X_MIN)) * PLOT_WIDTH;
 const curveY = (x: number) => (2 * x) / (1 + x * x);
@@ -250,6 +251,34 @@ function BendCurveDrawing() {
                 );
             })}
 
+            {/* confirmed points of inflection, marked in red once their two neighbouring signs disagree */}
+            <g opacity={restDim} style={{ transition: "opacity 150ms ease-out", pointerEvents: "none" }}>
+                {CUTS.map((cut, index) => {
+                    const leftFamily = familyForStretch(index, tested);
+                    const rightFamily = familyForStretch(index + 1, tested);
+                    if (!leftFamily || !rightFamily || leftFamily === rightFamily) return null;
+                    return (
+                        <g key={`inflection-dot-${index}`}>
+                            <circle
+                                cx={toScreenX(cut)}
+                                cy={toCurveScreenY(curveY(cut))}
+                                r={9}
+                                fill={INFLECTION_COLOR}
+                                opacity={0.22}
+                            />
+                            <circle
+                                cx={toScreenX(cut)}
+                                cy={toCurveScreenY(curveY(cut))}
+                                r={5}
+                                fill={INFLECTION_COLOR}
+                                stroke="#FFFFFF"
+                                strokeWidth="1.5"
+                            />
+                        </g>
+                    );
+                })}
+            </g>
+
             <g opacity={restDim} style={{ transition: "opacity 150ms ease-out" }}>
                 <circle cx={dotX} cy={dotY} r={dragging ? 10.5 : 9} fill={UP_COLOR} filter="url(#bend-dot-shadow)" />
                 <circle
@@ -279,7 +308,7 @@ function BendCurveFigure() {
         <Figure
             id="bend-curve-view"
             onReset={() => reset(setVar)}
-            caption="The curve, cut into four pieces at −√3, 0 and √3. A piece stays faint and dashed until its stretch has been tested on the bend line below."
+            caption="The curve, cut into four pieces at −√3, 0 and √3. A piece stays faint and dashed until its stretch has been tested, and a red dot appears at each point of inflection as soon as its two neighbouring signs disagree."
         >
             <BendCurveDrawing />
             <InteractionHintSequence
