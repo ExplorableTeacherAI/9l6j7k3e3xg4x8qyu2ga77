@@ -53,22 +53,11 @@
       }
     },
     {
-      "id": "layout-introduction-hook",
-      "type": "stack",
-      "columns": [
-        [
-          "introduction-hook"
-        ]
-      ],
-      "props": {
-        "maxWidth": "xl"
-      }
-    },
-    {
       "id": "layout-introduction-promise",
       "type": "stack",
       "columns": [
         [
+          "introduction-hook",
           "introduction-promise"
         ]
       ],
