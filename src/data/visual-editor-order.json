@@ -40,7 +40,6 @@
     "wrapping-up-routine",
     "wrapping-up-second-half",
     "wrapping-up-next",
-    "sketch-gradient-visual",
     "sketch-guidance",
     "sketch-question-second-test",
     "sketch-question-tail",
@@ -491,18 +490,6 @@
       "columns": [
         [
           "wrapping-up-next"
-        ]
-      ],
-      "props": {
-        "maxWidth": "xl"
-      }
-    },
-    {
-      "id": "editor-full-sketch-gradient-visual",
-      "type": "stack",
-      "columns": [
-        [
-          "sketch-gradient-visual"
         ]
       ],
       "props": {
