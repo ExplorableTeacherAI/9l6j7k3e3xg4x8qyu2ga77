@@ -31,23 +31,22 @@
     "bend-question-candidate",
     "bend-question-nochange",
     "asymptotes-heading",
-    "block-1787996561142",
-    "sketch-heading",
-    "sketch-setup",
-    "sketch-visual",
-    "sketch-tails",
-    "wrapping-up-heading",
-    "wrapping-up-routine",
-    "wrapping-up-second-half",
-    "wrapping-up-next",
-    "sketch-guidance",
-    "sketch-question-second-test",
-    "sketch-question-tail",
     "asymptotes-intro",
     "asymptotes-vertical",
     "block-1787995995946",
     "asymptotes-summary",
-    "asymptotes-question-horizontal"
+    "asymptotes-question-horizontal",
+    "sketch-heading",
+    "sketch-setup",
+    "sketch-visual",
+    "sketch-guidance",
+    "sketch-tails",
+    "sketch-question-second-test",
+    "sketch-question-tail",
+    "wrapping-up-heading",
+    "wrapping-up-routine",
+    "wrapping-up-second-half",
+    "wrapping-up-next"
   ],
   "rows": [
     {
@@ -389,150 +388,6 @@
       }
     },
     {
-      "id": "layout-block-1787996561142",
-      "type": "stack",
-      "columns": [
-        [
-          "block-1787996561142"
-        ]
-      ],
-      "props": {
-        "maxWidth": "xl"
-      }
-    },
-    {
-      "id": "layout-sketch-heading",
-      "type": "stack",
-      "columns": [
-        [
-          "sketch-heading"
-        ]
-      ],
-      "props": {
-        "maxWidth": "xl"
-      }
-    },
-    {
-      "id": "layout-sketch-setup",
-      "type": "stack",
-      "columns": [
-        [
-          "sketch-setup"
-        ]
-      ],
-      "props": {
-        "maxWidth": "xl"
-      }
-    },
-    {
-      "id": "layout-sketch-visual",
-      "type": "stack",
-      "columns": [
-        [
-          "sketch-visual"
-        ]
-      ],
-      "props": {
-        "maxWidth": "xl"
-      }
-    },
-    {
-      "id": "layout-sketch-tails",
-      "type": "stack",
-      "columns": [
-        [
-          "sketch-tails"
-        ]
-      ],
-      "props": {
-        "maxWidth": "xl"
-      }
-    },
-    {
-      "id": "layout-wrapping-up-heading",
-      "type": "stack",
-      "columns": [
-        [
-          "wrapping-up-heading"
-        ]
-      ],
-      "props": {
-        "maxWidth": "xl"
-      }
-    },
-    {
-      "id": "layout-wrapping-up-routine",
-      "type": "stack",
-      "columns": [
-        [
-          "wrapping-up-routine"
-        ]
-      ],
-      "props": {
-        "maxWidth": "xl"
-      }
-    },
-    {
-      "id": "layout-wrapping-up-second-half",
-      "type": "stack",
-      "columns": [
-        [
-          "wrapping-up-second-half"
-        ]
-      ],
-      "props": {
-        "maxWidth": "xl"
-      }
-    },
-    {
-      "id": "layout-wrapping-up-next",
-      "type": "stack",
-      "columns": [
-        [
-          "wrapping-up-next"
-        ]
-      ],
-      "props": {
-        "maxWidth": "xl"
-      }
-    },
-    {
-      "id": "editor-full-sketch-guidance",
-      "type": "stack",
-      "columns": [
-        [
-          "sketch-guidance"
-        ]
-      ],
-      "props": {
-        "maxWidth": "xl"
-      }
-    },
-    {
-      "id": "editor-full-sketch-question-second-test",
-      "type": "stack",
-      "columns": [
-        [
-          "sketch-question-second-test"
-        ]
-      ],
-      "props": {
-        "maxWidth": "xl"
-      }
-    },
-    {
-      "id": "editor-full-sketch-question-tail",
-      "type": "stack",
-      "columns": [
-        [
-          "sketch-question-tail"
-        ]
-      ],
-      "props": {
-        "maxWidth": "xl"
-      }
-    },
-    {
       "id": "editor-full-asymptotes-intro",
       "type": "stack",
       "columns": [
@@ -586,6 +441,138 @@
       "columns": [
         [
           "asymptotes-question-horizontal"
+        ]
+      ],
+      "props": {
+        "maxWidth": "xl"
+      }
+    },
+    {
+      "id": "layout-sketch-heading",
+      "type": "stack",
+      "columns": [
+        [
+          "sketch-heading"
+        ]
+      ],
+      "props": {
+        "maxWidth": "xl"
+      }
+    },
+    {
+      "id": "layout-sketch-setup",
+      "type": "stack",
+      "columns": [
+        [
+          "sketch-setup"
+        ]
+      ],
+      "props": {
+        "maxWidth": "xl"
+      }
+    },
+    {
+      "id": "layout-sketch-visual",
+      "type": "stack",
+      "columns": [
+        [
+          "sketch-visual"
+        ]
+      ],
+      "props": {
+        "maxWidth": "xl"
+      }
+    },
+    {
+      "id": "editor-full-sketch-guidance",
+      "type": "stack",
+      "columns": [
+        [
+          "sketch-guidance"
+        ]
+      ],
+      "props": {
+        "maxWidth": "xl"
+      }
+    },
+    {
+      "id": "layout-sketch-tails",
+      "type": "stack",
+      "columns": [
+        [
+          "sketch-tails"
+        ]
+      ],
+      "props": {
+        "maxWidth": "xl"
+      }
+    },
+    {
+      "id": "editor-full-sketch-question-second-test",
+      "type": "stack",
+      "columns": [
+        [
+          "sketch-question-second-test"
+        ]
+      ],
+      "props": {
+        "maxWidth": "xl"
+      }
+    },
+    {
+      "id": "editor-full-sketch-question-tail",
+      "type": "stack",
+      "columns": [
+        [
+          "sketch-question-tail"
+        ]
+      ],
+      "props": {
+        "maxWidth": "xl"
+      }
+    },
+    {
+      "id": "layout-wrapping-up-heading",
+      "type": "stack",
+      "columns": [
+        [
+          "wrapping-up-heading"
+        ]
+      ],
+      "props": {
+        "maxWidth": "xl"
+      }
+    },
+    {
+      "id": "layout-wrapping-up-routine",
+      "type": "stack",
+      "columns": [
+        [
+          "wrapping-up-routine"
+        ]
+      ],
+      "props": {
+        "maxWidth": "xl"
+      }
+    },
+    {
+      "id": "layout-wrapping-up-second-half",
+      "type": "stack",
+      "columns": [
+        [
+          "wrapping-up-second-half"
+        ]
+      ],
+      "props": {
+        "maxWidth": "xl"
+      }
+    },
+    {
+      "id": "layout-wrapping-up-next",
+      "type": "stack",
+      "columns": [
+        [
+          "wrapping-up-next"
         ]
       ],
       "props": {

@@ -19,7 +19,7 @@ export const blocks: ReactElement[] = [
     ...findingFlatPointsBlocks,
     ...testingTheSignBlocks,
     ...whereTheBendChangesBlocks,
-    ...puttingTheSketchTogetherBlocks,
     ...linesNeverReachedBlocks,
+    ...puttingTheSketchTogetherBlocks,
     ...wrappingUpBlocks,
 ];
