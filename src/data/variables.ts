@@ -197,6 +197,44 @@ export const variableDefinitions: Record<string, VariableDefinition> = {
         options: ['stays the same', 'changes', 'becomes zero'],
         color: '#8E90F5',
     },
+    // ─────────────────────────────────────────
+    // SECTION: Putting the Sketch Together
+    // ─────────────────────────────────────────
+    sketchControls: {
+        defaultValue: Array.from({ length: 25 }, (_, index) =>
+            Math.round(((-3 + index * 0.25) / 3) * 1000) / 1000,
+        ),
+        type: 'array',
+        label: 'Sketch control heights',
+        description: 'The 25 control heights of the curve the student bends, from x = -3 to x = 3',
+    },
+    sketchHighlight: {
+        defaultValue: '',
+        type: 'linkedHighlight',
+        label: 'Sketch highlight',
+        description: 'Links the flat points and the steepest climb across the curve and its gradient graph',
+        color: '#62D0AD',
+        bgColor: 'rgba(98, 208, 173, 0.2)',
+    },
+    answerSketchSecondTest: {
+        defaultValue: '',
+        type: 'text',
+        label: 'Second derivative test',
+        description: 'Classifying (1, -2) on y = x^3 - 3x using d2y/dx2 = 6x',
+        placeholder: '???',
+        correctAnswer: ['minimum', 'a minimum', 'min'],
+        color: '#8E90F5',
+    },
+    answerSketchTail: {
+        defaultValue: '',
+        type: 'select',
+        label: 'Sign of the gradient far right',
+        description: 'Sign of dy/dx far out to the right, where the curve sinks back toward zero',
+        placeholder: '???',
+        correctAnswer: 'negative',
+        options: ['positive', 'negative', 'zero'],
+        color: '#8E90F5',
+    },
     answerFlatPointsAsymptote: {
         defaultValue: '',
         type: 'text',
