@@ -200,13 +200,33 @@ export const variableDefinitions: Record<string, VariableDefinition> = {
     // ─────────────────────────────────────────
     // SECTION: Putting the Sketch Together
     // ─────────────────────────────────────────
-    sketchControls: {
-        defaultValue: Array.from({ length: 25 }, (_, index) =>
-            Math.round(((-3 + index * 0.25) / 3) * 1000) / 1000,
-        ),
+    sketchFlagPositions: {
+        defaultValue: [-2.4, 0.9, 2.4, -0.9],
         type: 'array',
-        label: 'Sketch control heights',
-        description: 'The 25 control heights of the curve the student bends, from x = -3 to x = 3',
+        label: 'Turning point markers',
+        description: 'x and y of the two markers the student drags onto the flat points',
+    },
+    sketchStretchSigns: {
+        defaultValue: [0, 0, 0],
+        type: 'array',
+        label: 'Stretch gradient signs',
+        description: 'Rising (1), falling (-1) or unset (0) for each of the three stretches',
+    },
+    sketchInflectionXs: {
+        defaultValue: [-2.8, -0.6, 2.8],
+        type: 'array',
+        label: 'Inflection markers',
+        description: 'x positions of the three red dots the student slides onto the bend changes',
+    },
+    sketchPenX: {
+        defaultValue: -3.4,
+        type: 'number',
+        label: 'Pen position',
+        description: 'How far across the grid the student has inked in the finished curve',
+        min: -3.4,
+        max: 3.4,
+        step: 0.05,
+        color: '#62D0AD',
     },
     sketchHighlight: {
         defaultValue: '',

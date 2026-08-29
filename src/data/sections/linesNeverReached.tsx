@@ -453,6 +453,24 @@ export const linesNeverReachedBlocks: ReactElement[] = [
         </Block>
     </StackLayout>,
 
+    <StackLayout key="layout-block-1787996561142" maxWidth="xl">
+        <Block id="block-1787996561142" padding="sm">
+            <EditableParagraph id="para-block-1787996561142" blockId="block-1787996561142"></EditableParagraph>
+        </Block>
+    </StackLayout>,
+
+    <StackLayout key="layout-block-1787996481932" maxWidth="xl">
+        <Block id="block-1787996481932" padding="sm">
+            <EditableParagraph id="para-block-1787996481932" blockId="block-1787996481932"></EditableParagraph>
+        </Block>
+    </StackLayout>,
+
+    <StackLayout key="layout-block-1787996484785" maxWidth="xl">
+        <Block id="block-1787996484785" padding="sm">
+            <EditableParagraph id="para-block-1787996484785" blockId="block-1787996484785"></EditableParagraph>
+        </Block>
+    </StackLayout>,
+
     <StackLayout key="layout-asymptotes-intro" maxWidth="xl">
         <Block id="asymptotes-intro" padding="sm">
             <EditableParagraph id="para-asymptotes-intro" blockId="asymptotes-intro">
