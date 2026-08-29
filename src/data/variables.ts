@@ -111,6 +111,46 @@ export const variableDefinitions: Record<string, VariableDefinition> = {
         correctAnswer: ['-2', '\u22122', 'x = -2', 'x=-2'],
         color: '#8E90F5',
     },
+    // ─────────────────────────────────────────
+    // SECTION: Testing the Sign Either Side
+    // ─────────────────────────────────────────
+    signTestX: {
+        defaultValue: -3,
+        type: 'number',
+        label: 'Gradient test value',
+        description: 'x value the student drops into each stretch to test the sign of dy/dx',
+        min: -3,
+        max: 3,
+        step: 0.1,
+        color: '#62D0AD',
+    },
+    signTestHighlight: {
+        defaultValue: '',
+        type: 'linkedHighlight',
+        label: 'Sign column highlight',
+        description: 'Which family of sign-table columns is highlighted: positive or negative',
+        color: '#62D0AD',
+        bgColor: 'rgba(98, 208, 173, 0.2)',
+    },
+    answerSignTestClassify: {
+        defaultValue: '',
+        type: 'text',
+        label: 'Classify the stationary point',
+        description: 'Student answer naming x = 2 as a minimum after the sign test',
+        placeholder: '???',
+        correctAnswer: ['minimum', 'a minimum', 'min'],
+        color: '#8E90F5',
+    },
+    answerSignTestRepeated: {
+        defaultValue: '',
+        type: 'select',
+        label: 'Repeated factor sign',
+        description: 'Sign of dy/dx either side of x = 4 when dy/dx = (x - 4)^2',
+        placeholder: '???',
+        correctAnswer: 'positive',
+        options: ['positive', 'negative', 'zero'],
+        color: '#8E90F5',
+    },
     answerFlatPointsAsymptote: {
         defaultValue: '',
         type: 'text',
