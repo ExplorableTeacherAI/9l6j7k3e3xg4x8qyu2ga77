@@ -81,9 +81,45 @@ export interface VariableDefinition {
  *    { defaultValue: { x: 5, y: 10 }, type: 'object', schema: '{ x: number, y: number }' }
  */
 export const variableDefinitions: Record<string, VariableDefinition> = {
-    // ========================================
-    // ADD YOUR VARIABLES HERE
-    // ========================================
+    // ─────────────────────────────────────────
+    // SECTION: Where the Curve Flattens
+    // ─────────────────────────────────────────
+    flatPointsDotX: {
+        defaultValue: -3,
+        type: 'number',
+        label: 'Walking dot position',
+        description: 'x-coordinate of the dot the student drags along y = 2x/(1 + x^2)',
+        min: -3,
+        max: 3,
+        step: 0.1,
+        color: '#62D0AD',
+    },
+    flatPointsArrowHighlight: {
+        defaultValue: '',
+        type: 'linkedHighlight',
+        label: 'Gradient arrow highlight',
+        description: 'Which family of trail arrows is highlighted: climbing, falling or level',
+        color: '#62D0AD',
+        bgColor: 'rgba(98, 208, 173, 0.2)',
+    },
+    answerFlatPointsPartner: {
+        defaultValue: '',
+        type: 'text',
+        label: 'Partner turning point',
+        description: 'Second x value where dy/dx = 0 for y = x/(4 + x^2)',
+        placeholder: '???',
+        correctAnswer: ['-2', '\u22122', 'x = -2', 'x=-2'],
+        color: '#8E90F5',
+    },
+    answerFlatPointsAsymptote: {
+        defaultValue: '',
+        type: 'text',
+        label: 'Vertical asymptote',
+        description: 'x value where the denominator of the derivative is zero',
+        placeholder: '???',
+        correctAnswer: ['5', 'x = 5', 'x=5'],
+        color: '#8E90F5',
+    },
 
     // Uncomment and modify these examples for your lesson:
 
