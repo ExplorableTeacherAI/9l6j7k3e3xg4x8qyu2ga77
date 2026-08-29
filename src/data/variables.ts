@@ -200,13 +200,24 @@ export const variableDefinitions: Record<string, VariableDefinition> = {
     // ─────────────────────────────────────────
     // SECTION: Putting the Sketch Together
     // ─────────────────────────────────────────
-    sketchControls: {
-        defaultValue: Array.from({ length: 25 }, (_, index) =>
-            Math.round(((-3 + index * 0.25) / 3) * 1000) / 1000,
-        ),
-        type: 'array',
-        label: 'Sketch control heights',
-        description: 'The 25 control heights of the curve the student bends, from x = -3 to x = 3',
+    sketchPenX: {
+        defaultValue: -3.6,
+        type: 'number',
+        label: 'Pen position',
+        description: 'Where the drawing pen currently sits along the curve',
+        min: -3.6,
+        max: 3.6,
+        step: 0.05,
+        color: '#62D0AD',
+    },
+    sketchDrawnTo: {
+        defaultValue: -3.6,
+        type: 'number',
+        label: 'Curve drawn as far as',
+        description: 'The furthest x the pen has reached, so the inked curve and its landmarks stay put',
+        min: -3.6,
+        max: 3.6,
+        step: 0.05,
     },
     sketchHighlight: {
         defaultValue: '',

@@ -21,32 +21,32 @@ import {
 import { clamp } from "@/lib/motion";
 
 /* ────────────────────────────────────────────────────────────────────────────
- * Bend a curve of your own until every clue on the checklist ticks itself off.
+ * Draw the finished curve, landmark by landmark.
  *
- * The clues ARE the findings of the earlier sections. Each one is measured
- * live from the curve the student has made, so nothing ticks until the shape
- * genuinely satisfies it.
+ * The student drags a pen from the far left. The curve inks in behind it, and
+ * every essential point is drawn and confirmed the moment the pen reaches it:
+ * the two turning points, the three points of inflection, and finally the
+ * horizontal asymptote both tails settle toward.
  * ──────────────────────────────────────────────────────────────────────────── */
-
-const CONTROL_COUNT = 25;
-const H = 0.25;
-const CONTROL_X = Array.from({ length: CONTROL_COUNT }, (_, index) => -3 + index * H);
-const HANDLE_INDICES = [4, 8, 12, 16, 20]; // x = -2, -1, 0, 1, 2
 
 const VIEW_WIDTH = 620;
 const VIEW_HEIGHT = 300;
 const PAD_LEFT = 44;
 const PAD_RIGHT = 44;
-const PAD_TOP = 30;
+const PAD_TOP = 56;
 const PLOT_WIDTH = VIEW_WIDTH - PAD_LEFT - PAD_RIGHT;
-const PLOT_HEIGHT = 230;
+const PLOT_HEIGHT = 220;
 
-const X_MIN = -3.3;
-const X_MAX = 3.3;
-const Y_MIN = -1.7;
-const Y_MAX = 1.7;
+const X_MIN = -3.6;
+const X_MAX = 3.6;
+const Y_MIN = -1.5;
+const Y_MAX = 1.5;
+const ROOT_THREE = Math.sqrt(3);
 
 const ACCENT = "#62D0AD";
+const MIN_COLOR = "#8E90F5";
+const INFLECTION_COLOR = "#ef4444";
+const ASYMPTOTE_COLOR = "#AC8BF9";
 const SUCCESS = "#22c55e";
 const INK = "#334155";
 const STRUCTURE = "#94A3B8";
@@ -55,122 +55,139 @@ const MUTED = "#CBD5E1";
 const sx = (x: number) => PAD_LEFT + ((x - X_MIN) / (X_MAX - X_MIN)) * PLOT_WIDTH;
 const sy = (y: number) => PAD_TOP + ((Y_MAX - y) / (Y_MAX - Y_MIN)) * PLOT_HEIGHT;
 const invX = (screenX: number) => X_MIN + ((screenX - PAD_LEFT) / PLOT_WIDTH) * (X_MAX - X_MIN);
-const invY = (screenY: number) => Y_MAX - ((screenY - PAD_TOP) / PLOT_HEIGHT) * (Y_MAX - Y_MIN);
-const trueCurve = (x: number) => (2 * x) / (1 + x * x);
+const curveY = (x: number) => (2 * x) / (1 + x * x);
+const curveGradient = (x: number) => (2 - 2 * x * x) / Math.pow(1 + x * x, 2);
 
-const gradientOf = (controls: number[], index: number) => {
-    if (index === 0) return (controls[1] - controls[0]) / H;
-    if (index === CONTROL_COUNT - 1) return (controls[index] - controls[index - 1]) / H;
-    return (controls[index + 1] - controls[index - 1]) / (2 * H);
-};
+type MilestoneKind = "inflection" | "maximum" | "minimum" | "asymptote";
 
-interface Clue {
+interface Milestone {
     id: string;
+    x: number;
+    kind: MilestoneKind;
     label: string;
-    test: (controls: number[]) => boolean;
+    /** Short form drawn beside the marker, placed by hand so nothing overlaps */
+    shortLabel?: string;
+    labelDx?: number;
+    labelDy?: number;
+    anchor?: "start" | "middle" | "end";
+    banner: string;
+    highlightId: string;
 }
 
-const CLUES: Clue[] = [
+const MILESTONES: Milestone[] = [
     {
-        id: "flat-left",
-        label: "Flat at (−1, −1)",
-        test: (c) => Math.abs(gradientOf(c, 8)) <= 0.2 && Math.abs(c[8] + 1) <= 0.2,
+        id: "inflection-left",
+        x: -ROOT_THREE,
+        kind: "inflection",
+        label: "Inflection (−√3, −0.87)",
+        shortLabel: "(−√3, −0.87)",
+        labelDy: 22,
+        banner: "inflection at (−√3, −0.87), where the bend changes",
+        highlightId: "inflections",
     },
     {
-        id: "flat-right",
-        label: "Flat at (1, 1)",
-        test: (c) => Math.abs(gradientOf(c, 16)) <= 0.2 && Math.abs(c[16] - 1) <= 0.2,
+        id: "minimum",
+        x: -1,
+        kind: "minimum",
+        label: "Minimum (−1, −1)",
+        shortLabel: "minimum (−1, −1)",
+        labelDy: 29,
+        banner: "minimum at (−1, −1): falling before, climbing after",
+        highlightId: "turningPoints",
     },
     {
-        id: "falling-left",
-        label: "Falling out on the left",
-        test: (c) => [1, 2, 3, 4, 5, 6, 7].every((index) => gradientOf(c, index) < -0.02),
+        id: "inflection-origin",
+        x: 0,
+        kind: "inflection",
+        label: "Inflection (0, 0)",
+        shortLabel: "(0, 0)",
+        labelDx: 12,
+        labelDy: -8,
+        anchor: "start",
+        banner: "inflection at the origin, the steepest point of all",
+        highlightId: "inflections",
     },
     {
-        id: "climbing-middle",
-        label: "Climbing between the two",
-        test: (c) => [9, 10, 11, 12, 13, 14, 15].every((index) => gradientOf(c, index) > 0.05),
+        id: "maximum",
+        x: 1,
+        kind: "maximum",
+        label: "Maximum (1, 1)",
+        shortLabel: "maximum (1, 1)",
+        labelDy: -18,
+        banner: "maximum at (1, 1): climbing before, falling after",
+        highlightId: "turningPoints",
     },
     {
-        id: "falling-right",
-        label: "Falling out on the right",
-        test: (c) => [17, 18, 19, 20, 21, 22, 23].every((index) => gradientOf(c, index) < -0.02),
+        id: "inflection-right",
+        x: ROOT_THREE,
+        kind: "inflection",
+        label: "Inflection (√3, 0.87)",
+        shortLabel: "(√3, 0.87)",
+        labelDy: -12,
+        banner: "inflection at (√3, 0.87), where the bend changes back",
+        highlightId: "inflections",
     },
     {
-        id: "steepest-origin",
-        label: "Steepest right at the origin",
-        test: (c) => {
-            const middle = gradientOf(c, 12);
-            return middle > 0.6 && CONTROL_X.every((_, index) => gradientOf(c, index) <= middle + 1e-9);
-        },
+        id: "asymptote",
+        x: 3.5,
+        kind: "asymptote",
+        label: "Asymptote y = 0",
+        banner: "both tails settle toward the asymptote y = 0",
+        highlightId: "asymptote",
     },
 ];
 
-const truePath = (() => {
+const guidePath = (() => {
     const points: string[] = [];
-    for (let x = -3; x <= 3.001; x += 0.05) {
-        points.push(`${sx(x).toFixed(2)},${sy(trueCurve(x)).toFixed(2)}`);
+    for (let x = X_MIN; x <= X_MAX + 1e-9; x += 0.04) {
+        points.push(`${sx(x).toFixed(2)},${sy(curveY(x)).toFixed(2)}`);
     }
     return `M ${points.join(" L ")}`;
 })();
 
-function ChecklistCurveDrawing({ solved }: { solved: boolean }) {
+const inkedPath = (limit: number) => {
+    const points: string[] = [];
+    for (let x = X_MIN; x <= Math.min(limit, X_MAX) + 1e-9; x += 0.04) {
+        points.push(`${sx(x).toFixed(2)},${sy(curveY(x)).toFixed(2)}`);
+    }
+    return points.length > 1 ? `M ${points.join(" L ")}` : "";
+};
+
+function DrawTheCurveDrawing({ drawnTo }: { drawnTo: number }) {
     const setVar = useSetVar();
-    const controls = useVar<number[]>("sketchControls", CONTROL_X.map((x) => x / 3));
+    const penX = useVar<number>("sketchPenX", X_MIN);
     const highlight = useVar<string>("sketchHighlight", "");
-    const [brushCentre, setBrushCentre] = useState<number | null>(null);
+    const [dragging, setDragging] = useState(false);
     const svgRef = useRef<SVGSVGElement>(null);
 
+    const reached = MILESTONES.filter((milestone) => drawnTo >= milestone.x - 1e-9);
+    const latest = reached[reached.length - 1];
+
+    const dimFor = (id: string) => (highlight && highlight !== id ? 0.32 : 1);
     const restDim = highlight ? 0.32 : 1;
 
-    const valueAt = useCallback(
-        (x: number) => {
-            const position = clamp((x + 3) / H, 0, CONTROL_COUNT - 1);
-            const low = Math.floor(position);
-            const high = Math.min(low + 1, CONTROL_COUNT - 1);
-            return controls[low] + (controls[high] - controls[low]) * (position - low);
+    const updateFromPointer = useCallback(
+        (clientX: number) => {
+            const svg = svgRef.current;
+            if (!svg) return;
+            const rect = svg.getBoundingClientRect();
+            const next =
+                Math.round(clamp(invX(((clientX - rect.left) / rect.width) * VIEW_WIDTH), X_MIN, X_MAX) * 20) / 20;
+            setVar("sketchPenX", next);
+            if (next > drawnTo) setVar("sketchDrawnTo", next);
         },
-        [controls],
+        [setVar, drawnTo],
     );
 
-    const localPoint = useCallback((clientX: number, clientY: number) => {
-        const svg = svgRef.current;
-        if (!svg) return null;
-        const rect = svg.getBoundingClientRect();
-        return {
-            x: invX(((clientX - rect.left) / rect.width) * VIEW_WIDTH),
-            y: invY(((clientY - rect.top) / rect.height) * VIEW_HEIGHT),
-        };
-    }, []);
+    const gradient = curveGradient(penX);
+    const rodRawY = -gradient * (PLOT_HEIGHT / (Y_MAX - Y_MIN));
+    const rodRawX = PLOT_WIDTH / (X_MAX - X_MIN);
+    const rodLength = Math.hypot(rodRawX, rodRawY);
+    const rodUnitX = (rodRawX / rodLength) * 26;
+    const rodUnitY = (rodRawY / rodLength) * 26;
 
-    const beginDrag = (event: React.PointerEvent<SVGElement>) => {
-        const point = localPoint(event.clientX, event.clientY);
-        if (!point) return;
-        event.currentTarget.setPointerCapture(event.pointerId);
-        setBrushCentre(clamp(point.x, -3, 3));
-    };
-
-    const continueDrag = (event: React.PointerEvent<SVGSVGElement>) => {
-        if (brushCentre === null) return;
-        const point = localPoint(event.clientX, event.clientY);
-        if (!point) return;
-        const delta = clamp(point.y, -1.6, 1.6) - valueAt(brushCentre);
-        const next = controls.map((value, index) =>
-            clamp(
-                value + delta * Math.exp(-Math.pow(CONTROL_X[index] - brushCentre, 2) / (2 * 0.6 * 0.6)),
-                -1.6,
-                1.6,
-            ),
-        );
-        setVar("sketchControls", next);
-    };
-
-    const curvePath = `M ${controls
-        .map((value, index) => `${sx(CONTROL_X[index]).toFixed(2)},${sy(value).toFixed(2)}`)
-        .join(" L ")}`;
-
-    const handleHighlightId = (controlIndex: number) =>
-        controlIndex === 8 || controlIndex === 16 ? "turningPoints" : controlIndex === 12 ? "steepest" : "";
+    const markerColor = (kind: MilestoneKind) =>
+        kind === "maximum" ? ACCENT : kind === "minimum" ? MIN_COLOR : INFLECTION_COLOR;
 
     return (
         <svg
@@ -178,27 +195,39 @@ function ChecklistCurveDrawing({ solved }: { solved: boolean }) {
             viewBox={`0 0 ${VIEW_WIDTH} ${VIEW_HEIGHT}`}
             className="block w-full"
             style={{ touchAction: "none" }}
-            onPointerMove={continueDrag}
-            onPointerUp={() => setBrushCentre(null)}
-            onPointerLeave={() => setBrushCentre(null)}
         >
             <defs>
-                <filter id="checklist-handle-shadow" x="-50%" y="-50%" width="200%" height="200%">
+                <filter id="draw-pen-shadow" x="-50%" y="-50%" width="200%" height="200%">
                     <feDropShadow dx="0" dy="1" stdDeviation="1.5" floodColor="#0F172A" floodOpacity="0.25" />
                 </filter>
             </defs>
 
+            {/* the running confirmation */}
             <g opacity={restDim} style={{ transition: "opacity 150ms ease-out" }}>
-                <text x={PAD_LEFT} y={20} fill={solved ? SUCCESS : ACCENT} fontSize="12">
-                    {solved ? "your curve — that is the shape" : "your curve"}
+                <text x={PAD_LEFT} y={26} fill={latest ? SUCCESS : INK} fontSize="12">
+                    {latest ? `✓ ${latest.banner}` : "Drag the pen right and the curve draws itself."}
                 </text>
+                <text
+                    x={VIEW_WIDTH - 24}
+                    y={26}
+                    fill={STRUCTURE}
+                    fontSize="12"
+                    textAnchor="end"
+                    style={{ fontVariantNumeric: "tabular-nums" }}
+                >
+                    {`${reached.length} of ${MILESTONES.length}`}
+                </text>
+            </g>
+
+            {/* axes */}
+            <g opacity={restDim} style={{ transition: "opacity 150ms ease-out" }}>
                 <line x1={PAD_LEFT} y1={sy(0)} x2={PAD_LEFT + PLOT_WIDTH} y2={sy(0)} stroke={STRUCTURE} strokeWidth="1.5" strokeLinecap="round" />
                 <line x1={sx(0)} y1={PAD_TOP} x2={sx(0)} y2={PAD_TOP + PLOT_HEIGHT} stroke={STRUCTURE} strokeWidth="1.5" strokeLinecap="round" />
                 {[-3, -2, -1, 1, 2, 3].map((tick) => (
                     <text
                         key={`tick-${tick}`}
                         x={sx(tick)}
-                        y={sy(0) + 17}
+                        y={sy(0) + 16}
                         fill={STRUCTURE}
                         fontSize="10"
                         textAnchor="middle"
@@ -207,122 +236,175 @@ function ChecklistCurveDrawing({ solved }: { solved: boolean }) {
                         {tick}
                     </text>
                 ))}
-                {solved && (
-                    <path d={truePath} fill="none" stroke={MUTED} strokeWidth="2" strokeDasharray="5 6" strokeLinecap="round" />
-                )}
-                <path
-                    d={curvePath}
-                    fill="none"
-                    stroke={solved ? SUCCESS : ACCENT}
-                    strokeWidth="3"
-                    strokeLinecap="round"
-                    strokeLinejoin="round"
-                    style={{ transition: "stroke 200ms ease-out" }}
-                />
-                <path
-                    d={curvePath}
-                    fill="none"
-                    stroke="transparent"
-                    strokeWidth="30"
-                    strokeLinecap="round"
-                    style={{ cursor: brushCentre === null ? "grab" : "grabbing", touchAction: "none" }}
-                    onPointerDown={beginDrag}
-                />
             </g>
 
-            {HANDLE_INDICES.map((controlIndex) => {
-                const id = handleHighlightId(controlIndex);
-                const active = Boolean(id) && highlight === id;
-                const dim = highlight && !active ? 0.32 : 1;
-                const cx = sx(CONTROL_X[controlIndex]);
-                const cy = sy(controls[controlIndex]);
-                return (
-                    <g
-                        key={`handle-${controlIndex}`}
-                        opacity={dim}
-                        style={{ transition: "opacity 150ms ease-out" }}
-                        onPointerEnter={() => id && setVar("sketchHighlight", id)}
-                        onPointerLeave={() => setVar("sketchHighlight", "")}
-                    >
-                        {active && <circle cx={cx} cy={cy} r={17} fill={ACCENT} opacity={0.28} />}
-                        <circle
-                            cx={cx}
-                            cy={cy}
-                            r={active ? 11 : 8.5}
-                            fill={solved ? SUCCESS : ACCENT}
-                            filter="url(#checklist-handle-shadow)"
-                            style={{ transition: "r 150ms ease-out" }}
-                        />
-                        <circle
-                            cx={cx}
-                            cy={cy}
-                            r={22}
-                            fill="transparent"
-                            style={{ cursor: brushCentre === null ? "grab" : "grabbing", touchAction: "none" }}
-                            onPointerDown={beginDrag}
-                        />
-                    </g>
-                );
-            })}
+            {/* the asymptote, once the tails have been drawn */}
+            {drawnTo >= 3.5 && (
+                <g
+                    opacity={dimFor("asymptote")}
+                    style={{ transition: "opacity 150ms ease-out" }}
+                    onPointerEnter={() => setVar("sketchHighlight", "asymptote")}
+                    onPointerLeave={() => setVar("sketchHighlight", "")}
+                >
+                    {highlight === "asymptote" && (
+                        <line x1={PAD_LEFT} y1={sy(0)} x2={PAD_LEFT + PLOT_WIDTH} y2={sy(0)} stroke={ASYMPTOTE_COLOR} strokeWidth="10" opacity={0.28} strokeLinecap="round" />
+                    )}
+                    <line
+                        x1={PAD_LEFT}
+                        y1={sy(0)}
+                        x2={PAD_LEFT + PLOT_WIDTH}
+                        y2={sy(0)}
+                        stroke={ASYMPTOTE_COLOR}
+                        strokeWidth={highlight === "asymptote" ? 4 : 2.5}
+                        strokeDasharray="2 6"
+                        strokeLinecap="round"
+                        style={{ transition: "stroke-width 150ms ease-out" }}
+                    />
+                    <text x={VIEW_WIDTH - 24} y={sy(0) - 8} fill={ASYMPTOTE_COLOR} fontSize="11" textAnchor="end">
+                        asymptote y = 0
+                    </text>
+                </g>
+            )}
+
+            {/* the curve: a faint guide ahead, solid ink behind the pen */}
+            <g opacity={restDim} style={{ transition: "opacity 150ms ease-out" }}>
+                <path d={guidePath} fill="none" stroke={MUTED} strokeWidth="2" strokeDasharray="4 7" strokeLinecap="round" />
+                <path d={inkedPath(drawnTo)} fill="none" stroke={ACCENT} strokeWidth="3.2" strokeLinecap="round" />
+            </g>
+
+            {/* every landmark, drawn the moment the pen reaches it */}
+            {reached
+                .filter((milestone) => milestone.kind !== "asymptote")
+                .map((milestone) => {
+                    const active = highlight === milestone.highlightId;
+                    const color = markerColor(milestone.kind);
+                    const cx = sx(milestone.x);
+                    const cy = sy(curveY(milestone.x));
+                    return (
+                        <g
+                            key={milestone.id}
+                            opacity={dimFor(milestone.highlightId)}
+                            style={{ transition: "opacity 150ms ease-out" }}
+                            onPointerEnter={() => setVar("sketchHighlight", milestone.highlightId)}
+                            onPointerLeave={() => setVar("sketchHighlight", "")}
+                        >
+                            {active && <circle cx={cx} cy={cy} r={16} fill={color} opacity={0.28} />}
+                            <circle
+                                cx={cx}
+                                cy={cy}
+                                r={active ? 8 : 6}
+                                fill={color}
+                                stroke="#FFFFFF"
+                                strokeWidth="1.5"
+                                style={{ transition: "r 150ms ease-out" }}
+                            />
+                            <text
+                                x={cx + (milestone.labelDx ?? 0)}
+                                y={cy + (milestone.labelDy ?? 22)}
+                                fill={color}
+                                fontSize={milestone.kind === "inflection" ? 10 : 11}
+                                textAnchor={milestone.anchor ?? "middle"}
+                                style={{ pointerEvents: "none" }}
+                            >
+                                {milestone.shortLabel ?? milestone.label}
+                            </text>
+                        </g>
+                    );
+                })}
+
+            {/* the pen, carrying the tangent rod so the gradient stays visible */}
+            <g opacity={restDim} style={{ transition: "opacity 150ms ease-out" }}>
+                <line
+                    x1={sx(penX) - rodUnitX}
+                    y1={sy(curveY(penX)) - rodUnitY}
+                    x2={sx(penX) + rodUnitX}
+                    y2={sy(curveY(penX)) + rodUnitY}
+                    stroke={ACCENT}
+                    strokeWidth="3"
+                    strokeLinecap="round"
+                />
+                <circle cx={sx(penX)} cy={sy(curveY(penX))} r={dragging ? 10.5 : 9} fill={ACCENT} filter="url(#draw-pen-shadow)" />
+                <circle
+                    cx={sx(penX)}
+                    cy={sy(curveY(penX))}
+                    r={24}
+                    fill="transparent"
+                    style={{ cursor: dragging ? "grabbing" : "grab", touchAction: "none" }}
+                    onPointerDown={(event) => {
+                        event.currentTarget.setPointerCapture(event.pointerId);
+                        setDragging(true);
+                    }}
+                    onPointerMove={(event) => {
+                        if (dragging) updateFromPointer(event.clientX);
+                    }}
+                    onPointerUp={() => setDragging(false)}
+                    onPointerCancel={() => setDragging(false)}
+                />
+            </g>
         </svg>
     );
 }
 
-function ChecklistCurveFigure() {
+function DrawTheCurveFigure() {
     const setVar = useSetVar();
-    const controls = useVar<number[]>("sketchControls", CONTROL_X.map((x) => x / 3));
-    const results = CLUES.map((clue) => ({ ...clue, ok: clue.test(controls) }));
-    const done = results.filter((clue) => clue.ok).length;
-    const solved = done === CLUES.length;
+    const drawnTo = useVar<number>("sketchDrawnTo", X_MIN);
+    const reachedCount = MILESTONES.filter((milestone) => drawnTo >= milestone.x - 1e-9).length;
+    const finished = reachedCount === MILESTONES.length;
 
     return (
         <Figure
-            id="checklist-curve"
+            id="draw-the-curve"
             onReset={() => {
-                setVar("sketchControls", CONTROL_X.map((x) => Math.round((x / 3) * 1000) / 1000));
+                setVar("sketchPenX", X_MIN);
+                setVar("sketchDrawnTo", X_MIN);
                 setVar("sketchHighlight", "");
             }}
-            caption="Grab the curve anywhere, or take hold of a teal handle, and pull it into a shape that satisfies every clue. Each line ticks itself off the moment your curve genuinely meets it."
+            caption="Drag the pen from the far left. The curve inks in behind it, the rod on the pen shows the gradient as you go, and each essential point is drawn and confirmed the moment you reach it."
         >
-            <ChecklistCurveDrawing solved={solved} />
+            <DrawTheCurveDrawing drawnTo={drawnTo} />
             <div className="px-6 pb-5">
                 <div
                     className="mb-2 text-[12px] font-medium"
-                    style={{ color: solved ? SUCCESS : INK, fontVariantNumeric: "tabular-nums" }}
+                    style={{ color: finished ? SUCCESS : INK, fontVariantNumeric: "tabular-nums" }}
                 >
-                    {solved ? `all ${CLUES.length} clues satisfied` : `${done} of ${CLUES.length} clues satisfied`}
+                    {finished
+                        ? "every essential point is on the sketch"
+                        : `${reachedCount} of ${MILESTONES.length} essential points drawn`}
                 </div>
                 <ul className="grid grid-cols-1 gap-x-8 gap-y-1.5 sm:grid-cols-2">
-                    {results.map((clue) => (
-                        <li
-                            key={clue.id}
-                            className="flex items-center gap-2 text-[12px]"
-                            style={{ color: clue.ok ? SUCCESS : "#64748B", transition: "color 150ms ease-out" }}
-                        >
-                            <span
-                                className="inline-flex h-4 w-4 shrink-0 items-center justify-center rounded-full border text-[9px] leading-none"
-                                style={{
-                                    borderColor: clue.ok ? SUCCESS : MUTED,
-                                    backgroundColor: clue.ok ? SUCCESS : "transparent",
-                                    color: "#FFFFFF",
-                                    transition: "background-color 150ms ease-out, border-color 150ms ease-out",
-                                }}
+                    {MILESTONES.map((milestone) => {
+                        const done = drawnTo >= milestone.x - 1e-9;
+                        return (
+                            <li
+                                key={milestone.id}
+                                className="flex items-center gap-2 text-[12px]"
+                                style={{ color: done ? SUCCESS : "#64748B", transition: "color 150ms ease-out" }}
                             >
-                                {clue.ok ? "✓" : ""}
-                            </span>
-                            {clue.label}
-                        </li>
-                    ))}
+                                <span
+                                    className="inline-flex h-4 w-4 shrink-0 items-center justify-center rounded-full border text-[9px] leading-none"
+                                    style={{
+                                        borderColor: done ? SUCCESS : MUTED,
+                                        backgroundColor: done ? SUCCESS : "transparent",
+                                        color: "#FFFFFF",
+                                        transition: "background-color 150ms ease-out, border-color 150ms ease-out",
+                                    }}
+                                >
+                                    {done ? "✓" : ""}
+                                </span>
+                                {milestone.label}
+                            </li>
+                        );
+                    })}
                 </ul>
             </div>
             <InteractionHintSequence
-                hintKey="checklist-curve-bend"
+                hintKey="draw-the-curve-pen"
                 steps={[
                     {
-                        gesture: "drag-vertical",
-                        label: "Drag a teal handle up or down to bend the curve",
-                        position: { x: "62%", y: "40%" },
-                        dragPath: { type: "line", startOffset: { x: 0, y: 16 }, endOffset: { x: 0, y: -22 } },
+                        gesture: "drag-horizontal",
+                        label: "Drag the pen right to draw the curve",
+                        position: { x: "12%", y: "58%" },
+                        dragPath: { type: "line", startOffset: { x: -8, y: 0 }, endOffset: { x: 36, y: -10 } },
                     },
                 ]}
             />
@@ -344,23 +426,23 @@ export const puttingTheSketchTogetherBlocks: ReactElement[] = [
     <StackLayout key="layout-sketch-setup" maxWidth="xl">
         <Block id="sketch-setup" padding="sm">
             <EditableParagraph id="para-sketch-setup" blockId="sketch-setup">
-                Everything is now on the table. A valley at (−1, −1), a hilltop at (1, 1), falling
-                outside them and climbing between. Now bend a curve of your own until every one of
-                those findings ticks itself off the list.
+                Everything is now on the table. A valley at (−1, −1), a hilltop at (1, 1), the bend
+                changing at −√3, 0 and √3, and both tails sinking toward y = 0. Drag the pen across
+                and the curve draws itself, confirming each landmark as you reach it.
             </EditableParagraph>
         </Block>
     </StackLayout>,
 
     <StackLayout key="layout-sketch-build" maxWidth="xl">
         <Block id="sketch-visual" padding="sm" hasVisualization>
-            <ChecklistCurveFigure />
+            <DrawTheCurveFigure />
         </Block>
     </StackLayout>,
 
     <StackLayout key="layout-sketch-guidance" maxWidth="xl">
         <Block id="sketch-guidance" padding="sm">
             <EditableParagraph id="para-sketch-guidance" blockId="sketch-guidance">
-                Every clue on that list came out of the sections above. The two{" "}
+                Watch the rod on the pen as it travels. It lies perfectly flat at the two{" "}
                 <InlineLinkedHighlight
                     id="highlight-sketch-turning-points"
                     varName="sketchHighlight"
@@ -369,17 +451,17 @@ export const puttingTheSketchTogetherBlocks: ReactElement[] = [
                 >
                     turning points
                 </InlineLinkedHighlight>{" "}
-                pin the curve down at x = ±1, the three signs decide which way each stretch leans, and
-                the{" "}
+                and stands at its steepest at the origin, which is also one of the three{" "}
                 <InlineLinkedHighlight
-                    id="highlight-sketch-steepest"
+                    id="highlight-sketch-inflections"
                     varName="sketchHighlight"
-                    highlightId="steepest"
-                    {...linkedHighlightPropsFromDefinition(getVariableInfo('sketchHighlight'))}
+                    highlightId="inflections"
+                    color="#ef4444"
+                    bgColor="rgba(239, 68, 68, 0.18)"
                 >
-                    steepest climb
-                </InlineLinkedHighlight>{" "}
-                at the origin fixes how hard it swings between them.
+                    bend changes
+                </InlineLinkedHighlight>
+                .
             </EditableParagraph>
         </Block>
     </StackLayout>,
@@ -430,18 +512,18 @@ export const puttingTheSketchTogetherBlocks: ReactElement[] = [
                     failureMessage="— careful, this one catches people out."
                     hint="The curve is above the axis out there, but ask instead whether it is going up or coming down"
                     visualizationHint={{
-                        blockId: "flat-points-visual",
+                        blockId: "sketch-visual",
                         hintKey: "feedback-sketch-tail",
                         label: "Discover it yourself",
-                        resetVars: { flatPointsDotX: 1, flatPointsArrowHighlight: "" },
+                        resetVars: { sketchPenX: 1, sketchHighlight: "" },
                         steps: [
                             {
                                 gesture: "drag-horizontal",
-                                label: "Drag the dot out to the far right — the curve stays above the axis but the arrows point down",
-                                position: { x: "78%", y: "40%" },
-                                completionVar: "flatPointsDotX",
-                                completionValue: 3,
-                                completionTolerance: 0.4,
+                                label: "Drag the pen out to the far right — the curve stays above the axis but the rod tilts down",
+                                position: { x: "80%", y: "48%" },
+                                completionVar: "sketchPenX",
+                                completionValue: 3.4,
+                                completionTolerance: 0.5,
                             },
                         ],
                     }}
