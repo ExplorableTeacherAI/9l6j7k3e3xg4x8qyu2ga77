@@ -8,16 +8,20 @@ import {
     InlineLinkedHighlight,
     InlineClozeInput,
     InlineFeedback,
+    InlineFormula,
+    InlineTrigger,
     InteractionHintSequence,
 } from "@/components/atoms";
-import { Figure } from "@/components/molecules";
+import { Figure, FormulaBlock } from "@/components/molecules";
 import { useVar, useSetVar } from "@/stores";
 import {
     getVariableInfo,
     clozePropsFromDefinition,
     togglePropsFromDefinition,
     linkedHighlightPropsFromDefinition,
+    scrubVarsFromDefinitions,
 } from "../variables";
+import { CURVE_COLOR_MAP } from "./curveColors";
 import { clamp } from "@/lib/motion";
 
 /* ────────────────────────────────────────────────────────────────────────────
@@ -43,11 +47,11 @@ const X_MIN = -5;
 const X_MAX = 5;
 const Y_LIMIT = 3;
 
-const ACCENT = "#62D0AD";
-const MIN_COLOR = "#8E90F5";
-const INFLECTION_COLOR = "#ef4444";
-const ASYMPTOTE_COLOR = "#AC8BF9";
-const INK = "#334155";
+const ACCENT = CURVE_COLOR_MAP.termGradient;
+const MIN_COLOR = CURVE_COLOR_MAP.termFalling;
+const INFLECTION_COLOR = CURVE_COLOR_MAP.termBend;
+const ASYMPTOTE_COLOR = CURVE_COLOR_MAP.termBottomLine;
+const INK = CURVE_COLOR_MAP.termCurve;
 const STRUCTURE = "#94A3B8";
 
 const ROOT_THREE = Math.sqrt(3);
@@ -442,13 +446,36 @@ function BottomLineConsequence() {
     );
 }
 
+/* ────────────────────────────────────────────────────────────────────────────
+ * The travelling dot as a formula. Dragging the teal number moves the dot, and
+ * the y value turns violet once it is within a third of a unit of the line it
+ * can never reach.
+ * ──────────────────────────────────────────────────────────────────────────── */
+
+function HeightAtTheDotFormula() {
+    const curveName = useVar<string>("asymptoteCurve", PLUS_LABEL);
+    const dotX = useVar<number>("asymptoteDotX", 3.5);
+    const height = curveName === PLUS_LABEL ? plusCurve(dotX) : minusCurve(dotX);
+    const reading =
+        Number.isFinite(height) && Math.abs(height) < 50
+            ? `\\clr{${Math.abs(height) < 0.34 ? "termBottomLine" : "termCurve"}}{${height.toFixed(3)}}`
+            : `\\textcolor{${CURVE_COLOR_MAP.termBottomLine}}{\\text{beyond the chart}}`;
+    return (
+        <FormulaBlock
+            latex={`\\left.\\clr{termCurve}{y}\\right|_{x = \\scrub{asymptoteDotX}} = ${reading}`}
+            colorMap={CURVE_COLOR_MAP}
+            variables={scrubVarsFromDefinitions(['asymptoteDotX'])}
+        />
+    );
+}
+
 /* ──────────────────────────────────────────────────────────────────────────── */
 
 export const linesNeverReachedBlocks: ReactElement[] = [
     <StackLayout key="layout-asymptotes-heading" maxWidth="xl">
         <Block id="asymptotes-heading" padding="md">
             <EditableH2 id="h2-asymptotes-heading" blockId="asymptotes-heading">
-                Lines the Curve Never Reaches
+                Horizontal and Vertical Asymptotes
             </EditableH2>
         </Block>
     </StackLayout>,
@@ -457,8 +484,33 @@ export const linesNeverReachedBlocks: ReactElement[] = [
         <Block id="asymptotes-intro" padding="sm">
             <EditableParagraph id="para-asymptotes-intro" blockId="asymptotes-intro">
                 There is one more kind of line worth marking on a sketch: the ones a curve creeps
-                toward but never touches. Our curve flattens toward y = 0 far out in both directions,
-                and that line is its{" "}
+                toward but never touches. Our curve flattens toward{" "}
+                <InlineFormula
+                    id="formula-asymptotes-horizontal-line"
+                    latex="\clr{termBottomLine}{y = 0}"
+                    colorMap={CURVE_COLOR_MAP}
+                />
+                {" "}as x runs out to{" "}
+                <InlineTrigger
+                    id="trigger-asymptotes-plus-infinity"
+                    varName="asymptoteDotX"
+                    value={5}
+                    color={CURVE_COLOR_MAP.termBottomLine}
+                    bgColor="rgba(172, 139, 249, 0.18)"
+                >
+                    +∞
+                </InlineTrigger>{" "}
+                and{" "}
+                <InlineTrigger
+                    id="trigger-asymptotes-minus-infinity"
+                    varName="asymptoteDotX"
+                    value={-5}
+                    color={CURVE_COLOR_MAP.termBottomLine}
+                    bgColor="rgba(172, 139, 249, 0.18)"
+                >
+                    −∞
+                </InlineTrigger>
+                , and that line is its{" "}
                 <InlineLinkedHighlight
                     id="highlight-asymptote-horizontal"
                     varName="asymptoteHighlight"
@@ -484,7 +536,8 @@ export const linesNeverReachedBlocks: ReactElement[] = [
                 >
                     vertical asymptote
                 </InlineLinkedHighlight>{" "}
-                turns up wherever the bottom of the fraction collapses to zero. With a bottom line of{" "}
+                turns up wherever the denominator of the fraction collapses to zero. With a bottom
+                line of{" "}
                 <InlineToggle
                     id="toggle-asymptote-curve"
                     varName="asymptoteCurve"
@@ -502,6 +555,12 @@ export const linesNeverReachedBlocks: ReactElement[] = [
         </Block>
     </StackLayout>,
 
+    <StackLayout key="layout-asymptotes-height-readout" maxWidth="xl">
+        <Block id="asymptotes-height-readout" padding="lg">
+            <HeightAtTheDotFormula />
+        </Block>
+    </StackLayout>,
+
     <StackLayout key="layout-asymptotes-summary" maxWidth="xl">
         <Block id="asymptotes-summary" padding="sm">
             <EditableParagraph id="para-asymptotes-summary" blockId="asymptotes-summary">
@@ -514,8 +573,14 @@ export const linesNeverReachedBlocks: ReactElement[] = [
     <StackLayout key="layout-asymptotes-question-horizontal" maxWidth="xl">
         <Block id="asymptotes-question-horizontal" padding="md">
             <EditableParagraph id="para-asymptotes-question-horizontal" blockId="asymptotes-question-horizontal">
-                Far out to the right, y = 2x / (x² − 1) shrinks away because the x² underneath
-                outgrows the 2x on top. So both of its tails settle toward the horizontal line y ={" "}
+                Far out to the right,{" "}
+                <InlineFormula
+                    id="formula-asymptotes-question-curve"
+                    latex="\clr{termCurve}{y} = \frac{\clr{termTopLine}{2x}}{\clr{termBottomLine}{x^2 - 1}}"
+                    colorMap={CURVE_COLOR_MAP}
+                />
+                {" "}shrinks away because its denominator outgrows its numerator. So both of its
+                tails settle toward the horizontal line y ={" "}
                 <InlineFeedback
                     varName="answerAsymptoteHorizontal"
                     correctValue={["0", "y = 0", "y=0"]}

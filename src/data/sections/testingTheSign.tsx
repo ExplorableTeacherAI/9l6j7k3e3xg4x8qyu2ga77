@@ -9,15 +9,22 @@ import {
     InlineClozeInput,
     InlineClozeChoice,
     InlineFeedback,
+    InlineFormula,
+    InlineSpotColor,
+    InlineTooltip,
 } from "@/components/atoms";
 import { FormulaBlock } from "@/components/molecules";
+import { useVar } from "@/stores";
 import {
     getVariableInfo,
     numberPropsFromDefinition,
     clozePropsFromDefinition,
     choicePropsFromDefinition,
     linkedHighlightPropsFromDefinition,
+    spotColorPropsFromDefinition,
+    scrubVarsFromDefinitions,
 } from "../variables";
+import { CURVE_COLOR_MAP, ANSWER_COLOR, ANSWER_BG_COLOR, signTerm } from "./curveColors";
 import { SignTableFigure } from "./signTableFigure";
 
 const firstDerivative = (x: number) => (2 - 2 * x * x) / Math.pow(1 + x * x, 2);
@@ -48,11 +55,23 @@ function GradientSignTable() {
     );
 }
 
+function TopLineAtTheMarkerFormula() {
+    const testX = useVar<number>("signTestX", -3);
+    const topLine = -2 * (testX - 1) * (testX + 1);
+    return (
+        <FormulaBlock
+            latex={`\\left.\\clr{termTopLine}{-2(x-1)(x+1)}\\right|_{x = \\scrub{signTestX}} = \\clr{${signTerm(topLine, 0.03)}}{${topLine.toFixed(2)}}`}
+            colorMap={CURVE_COLOR_MAP}
+            variables={scrubVarsFromDefinitions(['signTestX'])}
+        />
+    );
+}
+
 export const testingTheSignBlocks: ReactElement[] = [
     <StackLayout key="layout-sign-test-heading" maxWidth="xl">
         <Block id="sign-test-heading" padding="md">
             <EditableH2 id="h2-sign-test-heading" blockId="sign-test-heading">
-                Testing the Sign Either Side
+                The First Derivative Test
             </EditableH2>
         </Block>
     </StackLayout>,
@@ -60,24 +79,67 @@ export const testingTheSignBlocks: ReactElement[] = [
     <StackLayout key="layout-sign-test-setup" maxWidth="xl">
         <Block id="sign-test-setup" padding="sm">
             <EditableParagraph id="para-sign-test-setup" blockId="sign-test-setup">
-                Finding where a curve flattens is only half of finding a turning point. The only way
-                to tell a hilltop from a valley floor is to check the gradient on both sides of it.
+                Locating a stationary point is only half the job. The{" "}
+                <InlineTooltip
+                    id="tooltip-sign-test-first-derivative-test"
+                    tooltip="The first derivative test classifies a stationary point from the sign of dy/dx immediately either side of it: plus then minus is a maximum, minus then plus is a minimum, and no change at all is a stationary point of inflection."
+                >
+                    first derivative test
+                </InlineTooltip>{" "}
+                settles which kind it is, by reading the sign of the gradient immediately either
+                side.
             </EditableParagraph>
         </Block>
     </StackLayout>,
 
     <StackLayout key="layout-sign-test-derivative" maxWidth="xl">
         <Block id="sign-test-derivative" padding="lg">
-            <FormulaBlock latex="\frac{dy}{dx} = \frac{-2(x-1)(x+1)}{(1+x^2)^2}" />
+            <FormulaBlock
+                latex="\frac{\clr{termGradient}{dy}}{\clr{termGradient}{dx}} = \frac{\clr{termTopLine}{-2(x-1)(x+1)}}{\clr{termBottomLine}{(1+x^2)^2}}"
+                colorMap={CURVE_COLOR_MAP}
+            />
+        </Block>
+    </StackLayout>,
+
+    <StackLayout key="layout-sign-test-bottom-line" maxWidth="xl">
+        <Block id="sign-test-bottom-line" padding="lg">
+            <FormulaBlock
+                latex="\clr{termBottomLine}{(1+x^2)^2} \;\text{ is always }\; \choice{signTestBottomSign} \;\text{ for every value of } x"
+                colorMap={CURVE_COLOR_MAP}
+                clozeChoices={{
+                    signTestBottomSign: {
+                        correctAnswer: 'positive',
+                        options: ['positive', 'negative', 'zero'],
+                        placeholder: '???',
+                        color: ANSWER_COLOR,
+                        bgColor: ANSWER_BG_COLOR,
+                    },
+                }}
+            />
         </Block>
     </StackLayout>,
 
     <StackLayout key="layout-sign-test-stretches" maxWidth="xl">
         <Block id="sign-test-stretches" padding="sm">
             <EditableParagraph id="para-sign-test-stretches" blockId="sign-test-stretches">
-                The bottom of that fraction is a square, so it is positive whatever x is. All the sign
-                information lives in −2(x − 1)(x + 1). Drag the teal marker into each stretch and let
-                the table fill itself in.
+                The{" "}
+                <InlineSpotColor
+                    id="spot-sign-test-bottom-line"
+                    varName="termBottomLine"
+                    {...spotColorPropsFromDefinition(getVariableInfo('termBottomLine'))}
+                >
+                    bottom line
+                </InlineSpotColor>{" "}
+                is a square, so it can never flip the sign of anything. That leaves all the sign
+                information in the{" "}
+                <InlineSpotColor
+                    id="spot-sign-test-top-line"
+                    varName="termTopLine"
+                    {...spotColorPropsFromDefinition(getVariableInfo('termTopLine'))}
+                >
+                    top line
+                </InlineSpotColor>
+                . Drag the teal marker into each stretch and let the table fill itself in.
             </EditableParagraph>
         </Block>
     </StackLayout>,
@@ -85,6 +147,12 @@ export const testingTheSignBlocks: ReactElement[] = [
     <StackLayout key="layout-sign-test-visual" maxWidth="xl">
         <Block id="sign-test-visual" padding="sm" hasVisualization>
             <GradientSignTable />
+        </Block>
+    </StackLayout>,
+
+    <StackLayout key="layout-sign-test-top-line-readout" maxWidth="xl">
+        <Block id="sign-test-top-line-readout" padding="lg">
+            <TopLineAtTheMarkerFormula />
         </Block>
     </StackLayout>,
 
@@ -102,7 +170,7 @@ export const testingTheSignBlocks: ReactElement[] = [
                     id="highlight-sign-test-negative"
                     varName="signTestHighlight"
                     highlightId="negative"
-                    color="#8E90F5"
+                    color={CURVE_COLOR_MAP.termFalling}
                     bgColor="rgba(142, 144, 245, 0.2)"
                 >
                     minus
@@ -124,10 +192,32 @@ export const testingTheSignBlocks: ReactElement[] = [
     <StackLayout key="layout-sign-test-question-classify" maxWidth="xl">
         <Block id="sign-test-question-classify" padding="md">
             <EditableParagraph id="para-sign-test-question-classify" blockId="sign-test-question-classify">
-                A student meets a new curve with dy/dx = 3(x − 2)(x + 4), finds it flat at x = 2, and
-                writes down "maximum" without testing. Putting x = 0 in gives 3(−2)(4) = −24, and
-                putting x = 3 in gives 3(1)(7) = +21. Falling and then climbing means x = 2 is really
-                a{" "}
+                A student meets a new curve with{" "}
+                <InlineFormula
+                    id="formula-sign-test-classify-derivative"
+                    latex="\frac{\clr{termGradient}{dy}}{\clr{termGradient}{dx}} = \clr{termTopLine}{3(x-2)(x+4)}"
+                    colorMap={CURVE_COLOR_MAP}
+                />
+                , finds it flat at x = 2, and writes down{" "}
+                <InlineTooltip
+                    id="tooltip-sign-test-maximum"
+                    tooltip="A maximum is a turning point the curve climbs into and falls away from: the gradient runs positive, then zero, then negative."
+                >
+                    maximum
+                </InlineTooltip>{" "}
+                without testing. Putting x = 0 in gives{" "}
+                <InlineFormula
+                    id="formula-sign-test-classify-left"
+                    latex="3(-2)(4) = \clr{termFalling}{-24}"
+                    colorMap={CURVE_COLOR_MAP}
+                />
+                , and putting x = 3 in gives{" "}
+                <InlineFormula
+                    id="formula-sign-test-classify-right"
+                    latex="3(1)(7) = \clr{termGradient}{+21}"
+                    colorMap={CURVE_COLOR_MAP}
+                />
+                . Falling and then climbing means x = 2 is really a{" "}
                 <InlineFeedback
                     varName="answerSignTestClassify"
                     correctValue={["minimum", "a minimum", "min"]}
@@ -173,8 +263,19 @@ export const testingTheSignBlocks: ReactElement[] = [
     <StackLayout key="layout-sign-test-question-repeated" maxWidth="xl">
         <Block id="sign-test-question-repeated" padding="md">
             <EditableParagraph id="para-sign-test-question-repeated" blockId="sign-test-question-repeated">
-                Now a stranger case. A curve has dy/dx = (x − 4)², which is flat at x = 4, and testing
-                x = 3 gives (−1)² and testing x = 5 gives (1)². Both of those come out{" "}
+                Now a stranger case. A curve has{" "}
+                <InlineFormula
+                    id="formula-sign-test-repeated-derivative"
+                    latex="\frac{\clr{termGradient}{dy}}{\clr{termGradient}{dx}} = \clr{termTopLine}{(x-4)^2}"
+                    colorMap={CURVE_COLOR_MAP}
+                />
+                , which is flat at x = 4, and testing either side gives{" "}
+                <InlineFormula
+                    id="formula-sign-test-repeated-tests"
+                    latex="\clr{termTopLine}{(-1)^2} \text{ and } \clr{termTopLine}{(1)^2}"
+                    colorMap={CURVE_COLOR_MAP}
+                />
+                . Both of those come out{" "}
                 <InlineFeedback
                     varName="answerSignTestRepeated"
                     correctValue="positive"

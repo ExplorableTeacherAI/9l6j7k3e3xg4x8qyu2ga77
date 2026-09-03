@@ -9,6 +9,9 @@ import {
     InlineClozeInput,
     InlineClozeChoice,
     InlineFeedback,
+    InlineFormula,
+    InlineSpotColor,
+    InlineTooltip,
     InteractionHintSequence,
 } from "@/components/atoms";
 import { Figure, FormulaBlock } from "@/components/molecules";
@@ -19,7 +22,10 @@ import {
     clozePropsFromDefinition,
     choicePropsFromDefinition,
     linkedHighlightPropsFromDefinition,
+    spotColorPropsFromDefinition,
+    scrubVarsFromDefinitions,
 } from "../variables";
+import { CURVE_COLOR_MAP, signTerm } from "./curveColors";
 import { clamp } from "@/lib/motion";
 
 /* ────────────────────────────────────────────────────────────────────────────
@@ -46,13 +52,13 @@ const CUTS = [-ROOT_THREE, 0, ROOT_THREE];
 const STRETCH_EDGES = [X_MIN, -ROOT_THREE, 0, ROOT_THREE, X_MAX];
 const STRETCH_LABELS = ["x < −√3", "−√3 < x < 0", "0 < x < √3", "x > √3"];
 
-const UP_COLOR = "#62D0AD";
-const DOWN_COLOR = "#8E90F5";
+const UP_COLOR = CURVE_COLOR_MAP.termGradient;
+const DOWN_COLOR = CURVE_COLOR_MAP.termFalling;
 const UNTESTED_COLOR = "#CBD5E1";
-const INK = "#334155";
+const INK = CURVE_COLOR_MAP.termCurve;
 const STRUCTURE = "#94A3B8";
 const RULE = "#E2E8F0";
-const INFLECTION_COLOR = "#ef4444";
+const INFLECTION_COLOR = CURVE_COLOR_MAP.termBend;
 
 const toScreenX = (x: number) => PAD_LEFT + ((x - X_MIN) / (X_MAX - X_MIN)) * PLOT_WIDTH;
 const curveY = (x: number) => (2 * x) / (1 + x * x);
@@ -513,13 +519,30 @@ function BendLineFigure() {
     );
 }
 
+/* ────────────────────────────────────────────────────────────────────────────
+ * The marker, written as a formula. Dragging the teal number moves the marker
+ * in both views, and the answer takes the colour of the bend it reports.
+ * ──────────────────────────────────────────────────────────────────────────── */
+
+function BendAtTheMarkerFormula() {
+    const testX = useVar<number>("bendTestX", -3);
+    const bend = secondDerivative(testX);
+    return (
+        <FormulaBlock
+            latex={`\\left.\\frac{\\clr{termBend}{d^2y}}{\\clr{termBend}{dx^2}}\\right|_{x = \\scrub{bendTestX}} = \\clr{${signTerm(bend, 0.005)}}{${bend.toFixed(3)}}`}
+            colorMap={CURVE_COLOR_MAP}
+            variables={scrubVarsFromDefinitions(['bendTestX'])}
+        />
+    );
+}
+
 /* ──────────────────────────────────────────────────────────────────────────── */
 
 export const whereTheBendChangesBlocks: ReactElement[] = [
     <StackLayout key="layout-bend-heading" maxWidth="xl">
         <Block id="bend-heading" padding="md">
             <EditableH2 id="h2-bend-heading" blockId="bend-heading">
-                The Bend, and Where It Changes
+                Concavity and Points of Inflection
             </EditableH2>
         </Block>
     </StackLayout>,
@@ -527,25 +550,61 @@ export const whereTheBendChangesBlocks: ReactElement[] = [
     <StackLayout key="layout-bend-setup" maxWidth="xl">
         <Block id="bend-setup" padding="sm">
             <EditableParagraph id="para-bend-setup" blockId="bend-setup">
-                The first derivative says which way the curve is heading; the second says how that
-                heading is changing. That is the curve's bend, and differentiating again hands us
-                three places where it might switch.
+                The{" "}
+                <InlineSpotColor
+                    id="spot-bend-gradient"
+                    varName="termGradient"
+                    {...spotColorPropsFromDefinition(getVariableInfo('termGradient'))}
+                >
+                    first derivative
+                </InlineSpotColor>{" "}
+                says which way the curve is heading; the{" "}
+                <InlineSpotColor
+                    id="spot-bend-second"
+                    varName="termBend"
+                    {...spotColorPropsFromDefinition(getVariableInfo('termBend'))}
+                >
+                    second
+                </InlineSpotColor>{" "}
+                says how that heading is changing. That is the curve's{" "}
+                <InlineTooltip
+                    id="tooltip-bend-concavity"
+                    tooltip="Concavity is the direction a curve bends. Where the second derivative is positive the curve is concave up, holding water; where it is negative the curve is concave down."
+                >
+                    concavity
+                </InlineTooltip>
+                , and differentiating again hands us three places where it might switch.
             </EditableParagraph>
         </Block>
     </StackLayout>,
 
     <StackLayout key="layout-bend-second-derivative" maxWidth="xl">
         <Block id="bend-second-derivative" padding="lg">
-            <FormulaBlock latex="\frac{d^2y}{dx^2} = \frac{4x(x-\sqrt{3})(x+\sqrt{3})}{(1+x^2)^3}" />
+            <FormulaBlock
+                latex="\frac{\clr{termBend}{d^2y}}{\clr{termBend}{dx^2}} = \frac{\clr{termTopLine}{4x(x-\sqrt3)(x+\sqrt3)}}{\clr{termBottomLine}{(1+x^2)^3}}"
+                colorMap={CURVE_COLOR_MAP}
+            />
         </Block>
     </StackLayout>,
 
     <StackLayout key="layout-bend-stretches" maxWidth="xl">
         <Block id="bend-stretches" padding="sm">
             <EditableParagraph id="para-bend-stretches" blockId="bend-stretches">
-                So the second derivative is zero at x = 0, x = √3 and x = −√3, but zero alone proves
-                nothing. A point of inflection needs the bend to actually change sign, so drag the
-                teal marker into each of the four stretches and watch the curve above firm up.
+                So the bend is zero at{" "}
+                <InlineFormula
+                    id="formula-bend-candidates"
+                    latex="\clr{termLevel}{x = 0}, \; \clr{termLevel}{x = \sqrt3} \; \text{ and } \; \clr{termLevel}{x = -\sqrt3}"
+                    colorMap={CURVE_COLOR_MAP}
+                />
+                , but zero alone proves nothing. A{" "}
+                <InlineTooltip
+                    id="tooltip-bend-inflection"
+                    tooltip="A point of inflection is where the curve changes which way it bends: concave up on one side, concave down on the other. The second derivative must change sign there, not merely reach zero."
+                >
+                    point of inflection
+                </InlineTooltip>{" "}
+                needs the bend to actually change sign, so drag the teal marker into each of the four
+                stretches and watch the curve above firm up.
             </EditableParagraph>
         </Block>
     </StackLayout>,
@@ -559,6 +618,12 @@ export const whereTheBendChangesBlocks: ReactElement[] = [
     <StackLayout key="layout-bend-line-view" maxWidth="xl">
         <Block id="bend-line-visual" padding="sm" hasVisualization>
             <BendLineFigure />
+        </Block>
+    </StackLayout>,
+
+    <StackLayout key="layout-bend-readout" maxWidth="xl">
+        <Block id="bend-readout" padding="lg">
+            <BendAtTheMarkerFormula />
         </Block>
     </StackLayout>,
 
@@ -578,17 +643,17 @@ export const whereTheBendChangesBlocks: ReactElement[] = [
                     highlightId="concaveUp"
                     {...linkedHighlightPropsFromDefinition(getVariableInfo('bendHighlight'))}
                 >
-                    upward
+                    concave up
                 </InlineLinkedHighlight>{" "}
                 where the sign is plus,{" "}
                 <InlineLinkedHighlight
                     id="highlight-bend-down"
                     varName="bendHighlight"
                     highlightId="concaveDown"
-                    color="#8E90F5"
+                    color={CURVE_COLOR_MAP.termFalling}
                     bgColor="rgba(142, 144, 245, 0.2)"
                 >
-                    downward
+                    concave down
                 </InlineLinkedHighlight>{" "}
                 where it is minus. All three candidates flip, so all three really are points of
                 inflection.
@@ -599,8 +664,19 @@ export const whereTheBendChangesBlocks: ReactElement[] = [
     <StackLayout key="layout-bend-question-candidate" maxWidth="xl">
         <Block id="bend-question-candidate" padding="md">
             <EditableParagraph id="para-bend-question-candidate" blockId="bend-question-candidate">
-                Try the first step on a new curve. If y = x³ − 6x² then d²y/dx² = 6x − 12, so the only
-                candidate for a point of inflection sits at x ={" "}
+                Try the first step on a new curve. If{" "}
+                <InlineFormula
+                    id="formula-bend-candidate-curve"
+                    latex="\clr{termCurve}{y} = x^3 - 6x^2"
+                    colorMap={CURVE_COLOR_MAP}
+                />
+                {" "}then{" "}
+                <InlineFormula
+                    id="formula-bend-candidate-second"
+                    latex="\frac{\clr{termBend}{d^2y}}{\clr{termBend}{dx^2}} = \clr{termTopLine}{6x - 12}"
+                    colorMap={CURVE_COLOR_MAP}
+                />
+                , so the only candidate for a point of inflection sits at x ={" "}
                 <InlineFeedback
                     varName="answerBendCandidate"
                     correctValue={["2", "x = 2", "x=2"]}
@@ -622,8 +698,25 @@ export const whereTheBendChangesBlocks: ReactElement[] = [
     <StackLayout key="layout-bend-question-nochange" maxWidth="xl">
         <Block id="bend-question-nochange" padding="md">
             <EditableParagraph id="para-bend-question-nochange" blockId="bend-question-nochange">
-                Here is the catch. For y = x⁴ the second derivative is 12x², which is zero at x = 0,
-                yet testing x = −1 gives 12 and testing x = 1 also gives 12. Across x = 0 the sign{" "}
+                Here is the catch. For{" "}
+                <InlineFormula
+                    id="formula-bend-quartic"
+                    latex="\clr{termCurve}{y} = x^4"
+                    colorMap={CURVE_COLOR_MAP}
+                />
+                {" "}the second derivative is{" "}
+                <InlineFormula
+                    id="formula-bend-quartic-second"
+                    latex="\frac{\clr{termBend}{d^2y}}{\clr{termBend}{dx^2}} = \clr{termTopLine}{12x^2}"
+                    colorMap={CURVE_COLOR_MAP}
+                />
+                , which is zero at x = 0, yet testing either side gives{" "}
+                <InlineFormula
+                    id="formula-bend-quartic-tests"
+                    latex="\clr{termGradient}{+12} \text{ and } \clr{termGradient}{+12}"
+                    colorMap={CURVE_COLOR_MAP}
+                />
+                . Across x = 0 the sign{" "}
                 <InlineFeedback
                     varName="answerBendNoChange"
                     correctValue="stays the same"

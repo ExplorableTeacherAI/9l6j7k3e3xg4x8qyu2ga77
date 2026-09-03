@@ -82,7 +82,7 @@ export interface VariableDefinition {
  */
 export const variableDefinitions: Record<string, VariableDefinition> = {
     // ─────────────────────────────────────────
-    // SECTION: Where the Curve Flattens
+    // SECTION: Stationary Points
     // ─────────────────────────────────────────
     flatPointsDotX: {
         defaultValue: -3,
@@ -109,10 +109,11 @@ export const variableDefinitions: Record<string, VariableDefinition> = {
         description: 'Second x value where dy/dx = 0 for y = x/(4 + x^2)',
         placeholder: '???',
         correctAnswer: ['-2', '\u22122', 'x = -2', 'x=-2'],
-        color: '#8E90F5',
+        color: '#3B82F6',
+        bgColor: 'rgba(59, 130, 246, 0.15)',
     },
     // ─────────────────────────────────────────
-    // SECTION: Testing the Sign Either Side
+    // SECTION: The First Derivative Test
     // ─────────────────────────────────────────
     signTestX: {
         defaultValue: -3,
@@ -139,7 +140,8 @@ export const variableDefinitions: Record<string, VariableDefinition> = {
         description: 'Student answer naming x = 2 as a minimum after the sign test',
         placeholder: '???',
         correctAnswer: ['minimum', 'a minimum', 'min'],
-        color: '#8E90F5',
+        color: '#3B82F6',
+        bgColor: 'rgba(59, 130, 246, 0.15)',
     },
     answerSignTestRepeated: {
         defaultValue: '',
@@ -149,10 +151,11 @@ export const variableDefinitions: Record<string, VariableDefinition> = {
         placeholder: '???',
         correctAnswer: 'positive',
         options: ['positive', 'negative', 'zero'],
-        color: '#8E90F5',
+        color: '#3B82F6',
+        bgColor: 'rgba(59, 130, 246, 0.15)',
     },
     // ─────────────────────────────────────────
-    // SECTION: The Bend, and Where It Changes
+    // SECTION: Concavity and Points of Inflection
     // ─────────────────────────────────────────
     bendTestX: {
         defaultValue: -3,
@@ -185,7 +188,8 @@ export const variableDefinitions: Record<string, VariableDefinition> = {
         description: 'x value where 6x - 12 equals zero',
         placeholder: '???',
         correctAnswer: ['2', 'x = 2', 'x=2'],
-        color: '#8E90F5',
+        color: '#3B82F6',
+        bgColor: 'rgba(59, 130, 246, 0.15)',
     },
     answerBendNoChange: {
         defaultValue: '',
@@ -195,10 +199,11 @@ export const variableDefinitions: Record<string, VariableDefinition> = {
         placeholder: '???',
         correctAnswer: 'stays the same',
         options: ['stays the same', 'changes', 'becomes zero'],
-        color: '#8E90F5',
+        color: '#3B82F6',
+        bgColor: 'rgba(59, 130, 246, 0.15)',
     },
     // ─────────────────────────────────────────
-    // SECTION: Putting the Sketch Together
+    // SECTION: Synthesising the Complete Sketch
     // ─────────────────────────────────────────
     sketchPenX: {
         defaultValue: -3.6,
@@ -234,7 +239,8 @@ export const variableDefinitions: Record<string, VariableDefinition> = {
         description: 'Classifying (1, -2) on y = x^3 - 3x using d2y/dx2 = 6x',
         placeholder: '???',
         correctAnswer: ['minimum', 'a minimum', 'min'],
-        color: '#8E90F5',
+        color: '#3B82F6',
+        bgColor: 'rgba(59, 130, 246, 0.15)',
     },
     answerSketchTail: {
         defaultValue: '',
@@ -244,10 +250,11 @@ export const variableDefinitions: Record<string, VariableDefinition> = {
         placeholder: '???',
         correctAnswer: 'negative',
         options: ['positive', 'negative', 'zero'],
-        color: '#8E90F5',
+        color: '#3B82F6',
+        bgColor: 'rgba(59, 130, 246, 0.15)',
     },
     // ─────────────────────────────────────────
-    // SECTION: Lines the Curve Never Reaches
+    // SECTION: Horizontal and Vertical Asymptotes
     // ─────────────────────────────────────────
     asymptoteCurve: {
         defaultValue: '1 + x\u00B2',
@@ -255,8 +262,8 @@ export const variableDefinitions: Record<string, VariableDefinition> = {
         label: 'Bottom line of the fraction',
         description: 'Which denominator the annotated summary curve uses',
         options: ['1 + x\u00B2', 'x\u00B2 \u2212 1'],
-        color: '#62D0AD',
-        bgColor: 'rgba(98, 208, 173, 0.2)',
+        color: '#AC8BF9',
+        bgColor: 'rgba(172, 139, 249, 0.2)',
     },
     asymptoteDotX: {
         defaultValue: 3.5,
@@ -283,7 +290,8 @@ export const variableDefinitions: Record<string, VariableDefinition> = {
         description: 'The line the curve levels off toward far from the origin',
         placeholder: '???',
         correctAnswer: ['0', 'y = 0', 'y=0'],
-        color: '#8E90F5',
+        color: '#3B82F6',
+        bgColor: 'rgba(59, 130, 246, 0.15)',
     },
     answerFlatPointsAsymptote: {
         defaultValue: '',
@@ -292,7 +300,97 @@ export const variableDefinitions: Record<string, VariableDefinition> = {
         description: 'x value where the denominator of the derivative is zero',
         placeholder: '???',
         correctAnswer: ['5', 'x = 5', 'x=5'],
+        color: '#3B82F6',
+        bgColor: 'rgba(59, 130, 246, 0.15)',
+    },
+
+    // ─────────────────────────────────────────
+    // SHARED COLOUR LANGUAGE
+    // One meaning, one colour — used by every figure, formula and prose term.
+    // ─────────────────────────────────────────
+    termCurve: {
+        defaultValue: '',
+        type: 'spotColor',
+        label: 'The curve itself',
+        description: 'Ink colour for the curve y and its plotted line',
+        color: '#334155',
+    },
+    termTopLine: {
+        defaultValue: '',
+        type: 'spotColor',
+        label: 'Top line of the fraction',
+        description: 'Coral — the numerator, which is where the flat points come from',
+        color: '#F4A89A',
+    },
+    termBottomLine: {
+        defaultValue: '',
+        type: 'spotColor',
+        label: 'Bottom line of the fraction',
+        description: 'Violet — the denominator, which is where asymptotes come from',
+        color: '#AC8BF9',
+    },
+    termGradient: {
+        defaultValue: '',
+        type: 'spotColor',
+        label: 'First derivative',
+        description: 'Teal — dy/dx, climbing, a positive gradient, a maximum',
+        color: '#62D0AD',
+    },
+    termFalling: {
+        defaultValue: '',
+        type: 'spotColor',
+        label: 'Falling and bending down',
+        description: 'Indigo — a negative gradient, a minimum, concave down',
         color: '#8E90F5',
+    },
+    termBend: {
+        defaultValue: '',
+        type: 'spotColor',
+        label: 'Second derivative',
+        description: 'Red — the bend, and the points of inflection where it changes',
+        color: '#ef4444',
+    },
+    termLevel: {
+        defaultValue: '',
+        type: 'spotColor',
+        label: 'Level and zero',
+        description: 'Slate — a gradient of exactly zero',
+        color: '#64748B',
+    },
+
+    // ─────────────────────────────────────────
+    // IN-FORMULA ANSWERS
+    // ─────────────────────────────────────────
+    flatPointsRootPositive: {
+        defaultValue: '',
+        type: 'text',
+        label: 'First root of the top line',
+        description: 'x value from the factor (x - 1) of the top line',
+        placeholder: '?',
+        correctAnswer: ['1', 'x = 1', 'x=1', '+1'],
+        color: '#3B82F6',
+        bgColor: 'rgba(59, 130, 246, 0.15)',
+    },
+    flatPointsRootNegative: {
+        defaultValue: '',
+        type: 'text',
+        label: 'Second root of the top line',
+        description: 'x value from the factor (x + 1) of the top line',
+        placeholder: '?',
+        correctAnswer: ['-1', '\u22121', 'x = -1', 'x=-1'],
+        color: '#3B82F6',
+        bgColor: 'rgba(59, 130, 246, 0.15)',
+    },
+    signTestBottomSign: {
+        defaultValue: '',
+        type: 'select',
+        label: 'Sign of the bottom line',
+        description: 'Whether (1 + x^2)^2 can ever be negative',
+        placeholder: '???',
+        correctAnswer: 'positive',
+        options: ['positive', 'negative', 'zero'],
+        color: '#3B82F6',
+        bgColor: 'rgba(59, 130, 246, 0.15)',
     },
 
     // Uncomment and modify these examples for your lesson:

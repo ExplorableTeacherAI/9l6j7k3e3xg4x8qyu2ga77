@@ -1,4 +1,4 @@
-import { useCallback, useRef, useState, type ReactElement } from "react";
+import { useCallback, useEffect, useRef, useState, type ReactElement } from "react";
 import { Block } from "@/components/templates";
 import { StackLayout } from "@/components/layouts";
 import {
@@ -8,6 +8,8 @@ import {
     InlineClozeInput,
     InlineClozeChoice,
     InlineFeedback,
+    InlineFormula,
+    InlineTrigger,
     InteractionHintSequence,
 } from "@/components/atoms";
 import { Figure } from "@/components/molecules";
@@ -18,6 +20,7 @@ import {
     choicePropsFromDefinition,
     linkedHighlightPropsFromDefinition,
 } from "../variables";
+import { CURVE_COLOR_MAP } from "./curveColors";
 import { clamp } from "@/lib/motion";
 
 /* ────────────────────────────────────────────────────────────────────────────
@@ -43,12 +46,12 @@ const Y_MIN = -1.5;
 const Y_MAX = 1.5;
 const ROOT_THREE = Math.sqrt(3);
 
-const ACCENT = "#62D0AD";
-const MIN_COLOR = "#8E90F5";
-const INFLECTION_COLOR = "#ef4444";
-const ASYMPTOTE_COLOR = "#AC8BF9";
+const ACCENT = CURVE_COLOR_MAP.termGradient;
+const MIN_COLOR = CURVE_COLOR_MAP.termFalling;
+const INFLECTION_COLOR = CURVE_COLOR_MAP.termBend;
+const ASYMPTOTE_COLOR = CURVE_COLOR_MAP.termBottomLine;
 const SUCCESS = "#22c55e";
-const INK = "#334155";
+const INK = CURVE_COLOR_MAP.termCurve;
 const STRUCTURE = "#94A3B8";
 const MUTED = "#CBD5E1";
 
@@ -159,6 +162,10 @@ function DrawTheCurveDrawing({ drawnTo }: { drawnTo: number }) {
     const highlight = useVar<string>("sketchHighlight", "");
     const [dragging, setDragging] = useState(false);
     const svgRef = useRef<SVGSVGElement>(null);
+
+    useEffect(() => {
+        if (penX > drawnTo) setVar("sketchDrawnTo", penX);
+    }, [penX, drawnTo, setVar]);
 
     const reached = MILESTONES.filter((milestone) => drawnTo >= milestone.x - 1e-9);
     const latest = reached[reached.length - 1];
@@ -418,7 +425,7 @@ export const puttingTheSketchTogetherBlocks: ReactElement[] = [
     <StackLayout key="layout-sketch-heading" maxWidth="xl">
         <Block id="sketch-heading" padding="md">
             <EditableH2 id="h2-sketch-heading" blockId="sketch-heading">
-                Putting the Sketch Together
+                Synthesising the Complete Sketch
             </EditableH2>
         </Block>
     </StackLayout>,
@@ -426,9 +433,40 @@ export const puttingTheSketchTogetherBlocks: ReactElement[] = [
     <StackLayout key="layout-sketch-setup" maxWidth="xl">
         <Block id="sketch-setup" padding="sm">
             <EditableParagraph id="para-sketch-setup" blockId="sketch-setup">
-                Everything is now on the table. A valley at (−1, −1), a hilltop at (1, 1), the bend
-                changing at −√3, 0 and √3, and both tails sinking toward y = 0. Drag the pen across
-                and the curve draws itself, confirming each landmark as you reach it.
+                Everything is now on the table. A valley at{" "}
+                <InlineTrigger
+                    id="trigger-sketch-valley"
+                    varName="sketchPenX"
+                    value={-1}
+                    color={CURVE_COLOR_MAP.termFalling}
+                    bgColor="rgba(142, 144, 245, 0.18)"
+                >
+                    (−1, −1)
+                </InlineTrigger>
+                , a hilltop at{" "}
+                <InlineTrigger
+                    id="trigger-sketch-hilltop"
+                    varName="sketchPenX"
+                    value={1}
+                    color={CURVE_COLOR_MAP.termGradient}
+                    bgColor="rgba(98, 208, 173, 0.18)"
+                >
+                    (1, 1)
+                </InlineTrigger>
+                , the bend changing at{" "}
+                <InlineFormula
+                    id="formula-sketch-inflections"
+                    latex="\clr{termBend}{-\sqrt3}, \; \clr{termBend}{0} \; \text{ and } \; \clr{termBend}{\sqrt3}"
+                    colorMap={CURVE_COLOR_MAP}
+                />
+                , and both tails sinking toward{" "}
+                <InlineFormula
+                    id="formula-sketch-asymptote"
+                    latex="\clr{termBottomLine}{y = 0}"
+                    colorMap={CURVE_COLOR_MAP}
+                />
+                . Drag the pen across and the curve draws itself, confirming each landmark as you
+                reach it.
             </EditableParagraph>
         </Block>
     </StackLayout>,
@@ -456,7 +494,7 @@ export const puttingTheSketchTogetherBlocks: ReactElement[] = [
                     id="highlight-sketch-inflections"
                     varName="sketchHighlight"
                     highlightId="inflections"
-                    color="#ef4444"
+                    color={CURVE_COLOR_MAP.termBend}
                     bgColor="rgba(239, 68, 68, 0.18)"
                 >
                     bend changes
@@ -469,8 +507,14 @@ export const puttingTheSketchTogetherBlocks: ReactElement[] = [
     <StackLayout key="layout-sketch-tails" maxWidth="xl">
         <Block id="sketch-tails" padding="sm">
             <EditableParagraph id="para-sketch-tails" blockId="sketch-tails">
-                One last thing the derivatives never told us: far out, the x² underneath grows much
-                faster than the 2x on top, so both tails sink quietly back toward zero.
+                One last thing the derivatives never told us. Far out, the{" "}
+                <InlineFormula
+                    id="formula-sketch-tails"
+                    latex="\frac{\clr{termTopLine}{2x}}{\clr{termBottomLine}{1 + x^2}}"
+                    colorMap={CURVE_COLOR_MAP}
+                />
+                {" "}has a bottom line growing much faster than its top line, so both tails sink
+                quietly back toward zero.
             </EditableParagraph>
         </Block>
     </StackLayout>,
@@ -478,9 +522,19 @@ export const puttingTheSketchTogetherBlocks: ReactElement[] = [
     <StackLayout key="layout-sketch-question-second-test" maxWidth="xl">
         <Block id="sketch-question-second-test" padding="md">
             <EditableParagraph id="para-sketch-question-second-test" blockId="sketch-question-second-test">
-                The second derivative can settle a turning point on its own. The curve y = x³ − 3x is
-                flat at x = 1, and d²y/dx² = 6x comes out as +6 there, so the curve is bending upward
-                and (1, −2) has to be a{" "}
+                The second derivative can settle a turning point on its own. The curve{" "}
+                <InlineFormula
+                    id="formula-sketch-cubic"
+                    latex="\clr{termCurve}{y} = x^3 - 3x"
+                    colorMap={CURVE_COLOR_MAP}
+                />
+                {" "}is flat at x = 1, and{" "}
+                <InlineFormula
+                    id="formula-sketch-cubic-second"
+                    latex="\frac{\clr{termBend}{d^2y}}{\clr{termBend}{dx^2}} = \clr{termTopLine}{6x} = \clr{termGradient}{+6}"
+                    colorMap={CURVE_COLOR_MAP}
+                />
+                {" "}there, so the curve is bending upward and (1, −2) has to be a{" "}
                 <InlineFeedback
                     varName="answerSketchSecondTest"
                     correctValue={["minimum", "a minimum", "min"]}
@@ -503,7 +557,13 @@ export const puttingTheSketchTogetherBlocks: ReactElement[] = [
         <Block id="sketch-question-tail" padding="md">
             <EditableParagraph id="para-sketch-question-tail" blockId="sketch-question-tail">
                 Back to our own curve. Past the hilltop at x = 1 it sinks slowly back toward zero and
-                never turns again, so far out to the right the sign of dy/dx must be{" "}
+                never turns again, so far out to the right the sign of{" "}
+                <InlineFormula
+                    id="formula-sketch-tail-gradient"
+                    latex="\frac{\clr{termGradient}{dy}}{\clr{termGradient}{dx}}"
+                    colorMap={CURVE_COLOR_MAP}
+                />
+                {" "}must be{" "}
                 <InlineFeedback
                     varName="answerSketchTail"
                     correctValue="negative"

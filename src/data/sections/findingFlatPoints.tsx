@@ -8,6 +8,10 @@ import {
     InlineLinkedHighlight,
     InlineClozeInput,
     InlineFeedback,
+    InlineFormula,
+    InlineSpotColor,
+    InlineTooltip,
+    InlineTrigger,
     InteractionHintSequence,
 } from "@/components/atoms";
 import { Figure, FormulaBlock } from "@/components/molecules";
@@ -17,7 +21,10 @@ import {
     numberPropsFromDefinition,
     clozePropsFromDefinition,
     linkedHighlightPropsFromDefinition,
+    spotColorPropsFromDefinition,
+    scrubVarsFromDefinitions,
 } from "../variables";
+import { CURVE_COLOR_MAP, ANSWER_COLOR, ANSWER_BG_COLOR, signTerm } from "./curveColors";
 import { clamp } from "@/lib/motion";
 
 /* ────────────────────────────────────────────────────────────────────────────
@@ -43,10 +50,10 @@ const Y_MAX = 1.4;
 const PX_PER_X = PLOT_WIDTH / (X_MAX - X_MIN);
 const PX_PER_Y = PLOT_HEIGHT / (Y_MAX - Y_MIN);
 
-const CLIMBING_COLOR = "#62D0AD";
-const FALLING_COLOR = "#8E90F5";
-const LEVEL_COLOR = "#64748B";
-const INK = "#334155";
+const CLIMBING_COLOR = CURVE_COLOR_MAP.termGradient;
+const FALLING_COLOR = CURVE_COLOR_MAP.termFalling;
+const LEVEL_COLOR = CURVE_COLOR_MAP.termLevel;
+const INK = CURVE_COLOR_MAP.termCurve;
 const STRUCTURE = "#94A3B8";
 
 const STATIONS = [-3, -2.5, -2, -1.5, -1, -0.5, 0, 0.5, 1, 1.5, 2, 2.5, 3];
@@ -335,13 +342,31 @@ function WalkingDotFigure() {
     );
 }
 
+/* ────────────────────────────────────────────────────────────────────────────
+ * The same dot, written as a formula. Dragging the teal number here walks the
+ * dot in the figure above, and the answer recolours itself: teal while the
+ * curve climbs, indigo while it falls, slate at the instant it lies level.
+ * ──────────────────────────────────────────────────────────────────────────── */
+
+function GradientAtTheDotFormula() {
+    const dotX = useVar<number>("flatPointsDotX", -3);
+    const gradient = curveGradient(dotX);
+    return (
+        <FormulaBlock
+            latex={`\\left.\\frac{\\clr{termGradient}{dy}}{\\clr{termGradient}{dx}}\\right|_{x = \\scrub{flatPointsDotX}} = \\clr{${signTerm(gradient, 0.03)}}{${gradient.toFixed(2)}}`}
+            colorMap={CURVE_COLOR_MAP}
+            variables={scrubVarsFromDefinitions(['flatPointsDotX'])}
+        />
+    );
+}
+
 /* ──────────────────────────────────────────────────────────────────────────── */
 
 export const findingFlatPointsBlocks: ReactElement[] = [
     <StackLayout key="layout-flat-points-heading" maxWidth="xl">
         <Block id="flat-points-heading" padding="md">
             <EditableH2 id="h2-flat-points-heading" blockId="flat-points-heading">
-                Where the Curve Flattens
+                Stationary Points: Solving dy/dx = 0
             </EditableH2>
         </Block>
     </StackLayout>,
@@ -349,25 +374,78 @@ export const findingFlatPointsBlocks: ReactElement[] = [
     <StackLayout key="layout-flat-points-setup" maxWidth="xl">
         <Block id="flat-points-setup" padding="sm">
             <EditableParagraph id="para-flat-points-setup" blockId="flat-points-setup">
-                A curve goes flat exactly where its gradient is zero, so turning points start with
-                dy/dx = 0. Here the quotient rule gives a fraction, and factorising the top makes the
-                zeros jump straight out.
+                A curve goes flat exactly where its gradient is zero, so every{" "}
+                <InlineTooltip
+                    id="tooltip-flat-points-stationary-point"
+                    tooltip="A stationary point is any point where dy/dx = 0. Most are turning points, a maximum or a minimum, but some are stationary points of inflection where the curve merely pauses."
+                >
+                    stationary point
+                </InlineTooltip>{" "}
+                starts with{" "}
+                <InlineFormula
+                    id="formula-flat-points-condition"
+                    latex="\frac{\clr{termGradient}{dy}}{\clr{termGradient}{dx}} = \clr{termLevel}{0}"
+                    colorMap={CURVE_COLOR_MAP}
+                />
+                . The quotient rule hands us a fraction, and factorising its{" "}
+                <InlineSpotColor
+                    id="spot-flat-points-top-line"
+                    varName="termTopLine"
+                    {...spotColorPropsFromDefinition(getVariableInfo('termTopLine'))}
+                >
+                    top line
+                </InlineSpotColor>{" "}
+                makes the zeros jump straight out.
             </EditableParagraph>
         </Block>
     </StackLayout>,
 
     <StackLayout key="layout-flat-points-derivative" maxWidth="xl">
         <Block id="flat-points-derivative" padding="lg">
-            <FormulaBlock latex="\frac{dy}{dx} = \frac{2(1+x^2) - 2x(2x)}{(1+x^2)^2} = \frac{-2(x-1)(x+1)}{(1+x^2)^2}" />
+            <FormulaBlock
+                latex="\frac{\clr{termGradient}{dy}}{\clr{termGradient}{dx}} = \frac{2(1+x^2) - 2x(2x)}{(1+x^2)^2} = \frac{\clr{termTopLine}{-2(x-1)(x+1)}}{\clr{termBottomLine}{(1+x^2)^2}}"
+                colorMap={CURVE_COLOR_MAP}
+            />
+        </Block>
+    </StackLayout>,
+
+    <StackLayout key="layout-flat-points-solve-top" maxWidth="xl">
+        <Block id="flat-points-solve-top" padding="lg">
+            <FormulaBlock
+                latex="\clr{termTopLine}{-2(x-1)(x+1)} = \clr{termLevel}{0} \quad \Rightarrow \quad x = \cloze{flatPointsRootPositive} \;\text{ or }\; x = \cloze{flatPointsRootNegative}"
+                colorMap={CURVE_COLOR_MAP}
+                clozeInputs={{
+                    flatPointsRootPositive: {
+                        correctAnswer: '1 | x = 1 | x=1 | +1',
+                        placeholder: '?',
+                        color: ANSWER_COLOR,
+                        bgColor: ANSWER_BG_COLOR,
+                    },
+                    flatPointsRootNegative: {
+                        correctAnswer: '-1 | −1 | x = -1 | x=-1',
+                        placeholder: '?',
+                        color: ANSWER_COLOR,
+                        bgColor: ANSWER_BG_COLOR,
+                    },
+                }}
+            />
         </Block>
     </StackLayout>,
 
     <StackLayout key="layout-flat-points-zeros" maxWidth="xl">
         <Block id="flat-points-zeros" padding="sm">
             <EditableParagraph id="para-flat-points-zeros" blockId="flat-points-zeros">
-                A fraction is zero only when its top is zero, so x = 1 or x = −1. The bottom is a
-                square that never reaches zero, so there are no vertical asymptotes. Drag the teal dot
-                across from the far left and watch its trail of arrows.
+                A fraction is zero only when its top line is zero, so each factor up there hands over
+                a flat point of its own. The{" "}
+                <InlineSpotColor
+                    id="spot-flat-points-bottom-line"
+                    varName="termBottomLine"
+                    {...spotColorPropsFromDefinition(getVariableInfo('termBottomLine'))}
+                >
+                    bottom line
+                </InlineSpotColor>{" "}
+                is a square that never reaches zero, so there are no vertical asymptotes. Drag the
+                teal dot across from the far left and watch its trail of arrows.
             </EditableParagraph>
         </Block>
     </StackLayout>,
@@ -375,6 +453,12 @@ export const findingFlatPointsBlocks: ReactElement[] = [
     <StackLayout key="layout-flat-points-visual" maxWidth="xl">
         <Block id="flat-points-visual" padding="sm" hasVisualization>
             <WalkingDotFigure />
+        </Block>
+    </StackLayout>,
+
+    <StackLayout key="layout-flat-points-gradient-readout" maxWidth="xl">
+        <Block id="flat-points-gradient-readout" padding="lg">
+            <GradientAtTheDotFormula />
         </Block>
     </StackLayout>,
 
@@ -400,14 +484,33 @@ export const findingFlatPointsBlocks: ReactElement[] = [
                 >
                     uphill
                 </InlineLinkedHighlight>{" "}
-                in the middle, and lies level at just two spots. With the dot at x ={" "}
+                in the middle, and lies level at exactly two spots:{" "}
+                <InlineTrigger
+                    id="trigger-flat-points-upper-level"
+                    varName="flatPointsDotX"
+                    value={1}
+                    color="#64748B"
+                    bgColor="rgba(100, 116, 139, 0.15)"
+                >
+                    (1, 1)
+                </InlineTrigger>{" "}
+                and{" "}
+                <InlineTrigger
+                    id="trigger-flat-points-lower-level"
+                    varName="flatPointsDotX"
+                    value={-1}
+                    color="#64748B"
+                    bgColor="rgba(100, 116, 139, 0.15)"
+                >
+                    (−1, −1)
+                </InlineTrigger>
+                . With the dot at x ={" "}
                 <InlineScrubbleNumber
                     varName="flatPointsDotX"
                     {...numberPropsFromDefinition(getVariableInfo('flatPointsDotX'))}
                     formatValue={(v) => v.toFixed(1)}
                 />
-                , the rod tilts by exactly the gradient there. Those level spots are (1, 1) and
-                (−1, −1).
+                , the rod tilts by exactly the gradient the formula above reports.
             </EditableParagraph>
         </Block>
     </StackLayout>,
@@ -415,9 +518,19 @@ export const findingFlatPointsBlocks: ReactElement[] = [
     <StackLayout key="layout-flat-points-question-partner" maxWidth="xl">
         <Block id="flat-points-question-partner" padding="md">
             <EditableParagraph id="para-flat-points-question-partner" blockId="flat-points-question-partner">
-                A different curve, y = x / (4 + x²), has dy/dx = (4 − x²) / (4 + x²)². Its top
-                factorises to (2 − x)(2 + x), so besides going flat at x = 2 it also goes flat at
-                x ={" "}
+                A different curve,{" "}
+                <InlineFormula
+                    id="formula-flat-points-partner-curve"
+                    latex="\clr{termCurve}{y} = \frac{\clr{termTopLine}{x}}{\clr{termBottomLine}{4 + x^2}}"
+                    colorMap={CURVE_COLOR_MAP}
+                />
+                , has{" "}
+                <InlineFormula
+                    id="formula-flat-points-partner-derivative"
+                    latex="\frac{\clr{termGradient}{dy}}{\clr{termGradient}{dx}} = \frac{\clr{termTopLine}{(2-x)(2+x)}}{\clr{termBottomLine}{(4 + x^2)^2}}"
+                    colorMap={CURVE_COLOR_MAP}
+                />
+                . So besides going flat at x = 2 it also goes flat at x ={" "}
                 <InlineFeedback
                     varName="answerFlatPointsPartner"
                     correctValue={["-2", "−2", "x = -2", "x=-2"]}
@@ -464,7 +577,13 @@ export const findingFlatPointsBlocks: ReactElement[] = [
         <Block id="flat-points-question-asymptote" padding="md">
             <EditableParagraph id="para-flat-points-question-asymptote" blockId="flat-points-question-asymptote">
                 Our curve had no vertical asymptotes because its bottom line never reached zero. So a
-                curve whose derivative is (x − 3) / (x − 5)² must have a vertical asymptote at x ={" "}
+                curve whose derivative is{" "}
+                <InlineFormula
+                    id="formula-flat-points-asymptote-derivative"
+                    latex="\frac{\clr{termTopLine}{x - 3}}{\clr{termBottomLine}{(x-5)^2}}"
+                    colorMap={CURVE_COLOR_MAP}
+                />
+                {" "}must have a vertical asymptote at x ={" "}
                 <InlineFeedback
                     varName="answerFlatPointsAsymptote"
                     correctValue={["5", "x = 5", "x=5"]}
