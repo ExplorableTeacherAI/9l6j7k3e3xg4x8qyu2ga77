@@ -294,26 +294,20 @@
     },
     {
       "id": "layout-bend-stretches",
-      "type": "stack",
+      "type": "split",
       "columns": [
         [
           "bend-stretches"
-        ]
-      ],
-      "props": {
-        "maxWidth": "xl"
-      }
-    },
-    {
-      "id": "layout-bend-curve-view",
-      "type": "stack",
-      "columns": [
+        ],
         [
           "bend-visual"
         ]
       ],
       "props": {
-        "maxWidth": "xl"
+        "ratio": "1:1",
+        "gap": "lg",
+        "reverse": false,
+        "align": "start"
       }
     },
     {
