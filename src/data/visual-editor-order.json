@@ -281,22 +281,11 @@
       }
     },
     {
-      "id": "layout-bend-second-derivative",
-      "type": "stack",
-      "columns": [
-        [
-          "bend-second-derivative"
-        ]
-      ],
-      "props": {
-        "maxWidth": "xl"
-      }
-    },
-    {
       "id": "layout-bend-stretches",
       "type": "split",
       "columns": [
         [
+          "bend-second-derivative",
           "bend-stretches"
         ],
         [
