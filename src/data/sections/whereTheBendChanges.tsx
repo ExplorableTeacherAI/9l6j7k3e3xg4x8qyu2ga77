@@ -628,13 +628,13 @@ export const whereTheBendChangesBlocks: ReactElement[] = [
                     varName="answerBendRegion"
                     correctValue="up"
                     position="terminal"
-                    successMessage="— right. Drop the marker into that stretch and its box shows a plus: the bend is positive there, so the curve holds water"
+                    successMessage="— right: its box shows a plus, so the curve holds water there"
                     failureMessage="— not that way."
-                    hint="The box under that stretch already knows the answer: drop the marker between −√3 and 0 and read its sign"
+                    hint="Read the sign box under that stretch"
                     visualizationHint={{
                         blockId: "bend-visual",
                         hintKey: "feedback-bend-region",
-                        label: "Find it on the figure",
+                        label: "Discover it yourself",
                         resetVars: { bendTestX: -3, bendHighlight: "" },
                         steps: [
                             {
