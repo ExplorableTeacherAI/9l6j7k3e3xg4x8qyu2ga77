@@ -610,53 +610,7 @@ export const whereTheBendChangesBlocks: ReactElement[] = [
 
     <StackLayout key="layout-bend-question-region" maxWidth="xl">
         <Block id="bend-question-region" padding="md">
-            <EditableParagraph id="para-bend-question-region" blockId="bend-question-region">
-                Read one stretch straight off the figure. Between{" "}
-                <InlineFormula
-                    id="formula-bend-region-stretch"
-                    latex="\clr{termLevel}{x = -\sqrt3}"
-                    colorMap={CURVE_COLOR_MAP}
-                />
-                {" "}and{" "}
-                <InlineFormula
-                    id="formula-bend-region-zero"
-                    latex="\clr{termLevel}{x = 0}"
-                    colorMap={CURVE_COLOR_MAP}
-                />
-                {" "}the curve is concave{" "}
-                <InlineFeedback
-                    varName="answerBendRegion"
-                    correctValue="up"
-                    position="terminal"
-                    successMessage="— right: its box shows a plus, so the curve holds water there"
-                    failureMessage="— not that way."
-                    hint="Read the sign box under that stretch"
-                    visualizationHint={{
-                        blockId: "bend-visual",
-                        hintKey: "feedback-bend-region",
-                        label: "Discover it yourself",
-                        resetVars: { bendTestX: -3, bendHighlight: "" },
-                        steps: [
-                            {
-                                gesture: "drag-horizontal",
-                                label: "Drag the marker right, past −√3, into the next stretch — its box fills with a plus and the curve above it firms up",
-                                position: { x: "39%", y: "62%" },
-                                dragPath: { type: "line", startOffset: { x: -34, y: 0 }, endOffset: { x: 24, y: 0 } },
-                                completionVar: "bendTestX",
-                                completionValue: -0.9,
-                                completionTolerance: 0.8,
-                            },
-                        ],
-                    }}
-                >
-                    <InlineClozeChoice
-                        varName="answerBendRegion"
-                        correctAnswer="up"
-                        options={["up", "down"]}
-                        {...choicePropsFromDefinition(getVariableInfo('answerBendRegion'))}
-                    />
-                </InlineFeedback>.
-            </EditableParagraph>
+            <EditableParagraph id="para-bend-question-region" blockId="bend-question-region">Between <InlineFormula latex={"\\clr{termLevel}{x = -\\sqrt3}"} colorMap={{"termCurve": "#334155", "termTopLine": "#E07A5F", "termBottomLine": "#8B5CF6", "termGradient": "#62D0AD", "termFalling": "#8E90F5", "termBend": "#ef4444", "termLevel": "#64748B"}} color={"#000000"} id={"formula-bend-region-stretch"} /> and <InlineFormula latex={"\\clr{termLevel}{x = 0}"} colorMap={{"termCurve": "#334155", "termTopLine": "#E07A5F", "termBottomLine": "#8B5CF6", "termGradient": "#62D0AD", "termFalling": "#8E90F5", "termBend": "#ef4444", "termLevel": "#64748B"}} color={"#000000"} id={"formula-bend-region-zero"} /> the curve is concave <InlineFeedback varName={"answerBendRegion"} correctValue={"up"} caseSensitive={false} position={"terminal"} successMessage={"— right: its box shows a plus, so the curve holds water there"} failureMessage={"— not that way."} hint={"Read the sign box under that stretch"} reviewLabel={"Review this concept"} visualizationHint={{"blockId": "bend-visual", "hintKey": "feedback-bend-region", "label": "Discover it yourself", "resetVars": {"bendTestX": -3, "bendHighlight": ""}, "steps": [{"gesture": "drag-horizontal", "label": "Drag the marker right, past −√3, into the next stretch — its box fills with a plus and the curve above it firms up", "position": {"x": "39%", "y": "62%"}, "dragPath": {"type": "line", "startOffset": {"x": -34, "y": 0}, "endOffset": {"x": 24, "y": 0}}, "completionVar": "bendTestX", "completionValue": -0.9, "completionTolerance": 0.8}]}}><InlineClozeChoice varName={"answerBendRegion"} correctAnswer={"up"} options={["up", "down"]} placeholder={"???"} color={"#3B82F6"} bgColor={"rgba(59, 130, 246, 0.15)"} id={"choice-1788683565440-z22wl"} /></InlineFeedback>.</EditableParagraph>
         </Block>
     </StackLayout>,
 
