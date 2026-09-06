@@ -1,0 +1,1 @@
+const r={termCurve:"#334155",termTopLine:"#E07A5F",termBottomLine:"#8B5CF6",termGradient:"#62D0AD",termFalling:"#8E90F5",termBend:"#ef4444",termLevel:"#64748B"},m="#3B82F6",n="rgba(59, 130, 246, 0.15)",s=(e,t=.005)=>e>t?"termGradient":e<-t?"termFalling":"termLevel";export{m as A,r as C,n as a,s};
