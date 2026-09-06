@@ -13,6 +13,7 @@ import {
     InlineSpotColor,
     InlineTooltip,
     InteractionHintSequence,
+    TriggeredHintOverlay,
 } from "@/components/atoms";
 import { Figure, FormulaBlock } from "@/components/molecules";
 import { useVar, useSetVar } from "@/stores";
@@ -462,6 +463,11 @@ function BendPairFigure() {
                     },
                 ]}
             />
+            {/* the guided journeys the questions below can start on this figure
+                ("Find it on the figure" / "Discover it yourself"); each listens
+                for its own feedback hintKey */}
+            <TriggeredHintOverlay hintKey="feedback-bend-region" />
+            <TriggeredHintOverlay hintKey="feedback-bend-no-change" />
         </Figure>
     );
 }
