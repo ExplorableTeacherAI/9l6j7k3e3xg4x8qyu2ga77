@@ -11,8 +11,8 @@
     "flat-points-zeros",
     "flat-points-coordinates",
     "flat-points-visual",
-    "flat-points-question-partner",
     "flat-points-question-asymptote",
+    "flat-points-question-partner",
     "sign-test-heading",
     "sign-test-setup",
     "sign-test-derivative",
@@ -137,11 +137,11 @@
       }
     },
     {
-      "id": "layout-flat-points-question-partner",
+      "id": "editor-full-flat-points-question-asymptote",
       "type": "stack",
       "columns": [
         [
-          "flat-points-question-partner"
+          "flat-points-question-asymptote"
         ]
       ],
       "props": {
@@ -149,11 +149,11 @@
       }
     },
     {
-      "id": "layout-flat-points-question-asymptote",
+      "id": "layout-flat-points-question-partner",
       "type": "stack",
       "columns": [
         [
-          "flat-points-question-asymptote"
+          "flat-points-question-partner"
         ]
       ],
       "props": {
