@@ -46,7 +46,13 @@
     "wrapping-up-heading",
     "wrapping-up-routine",
     "wrapping-up-second-half",
-    "wrapping-up-next"
+    "wrapping-up-next",
+    "flat-points-solve-top",
+    "flat-points-gradient-readout",
+    "sign-test-bottom-line",
+    "sign-test-top-line-readout",
+    "bend-readout",
+    "asymptotes-height-readout"
   ],
   "rows": [
     {
@@ -112,27 +118,21 @@
       }
     },
     {
-      "id": "layout-flat-points-zeros",
-      "type": "stack",
+      "id": "layout-flat-points-visual",
+      "type": "split",
       "columns": [
         [
           "flat-points-zeros"
-        ]
-      ],
-      "props": {
-        "maxWidth": "xl"
-      }
-    },
-    {
-      "id": "layout-flat-points-visual",
-      "type": "stack",
-      "columns": [
+        ],
         [
           "flat-points-visual"
         ]
       ],
       "props": {
-        "maxWidth": "xl"
+        "ratio": "1:1",
+        "gap": "lg",
+        "reverse": false,
+        "align": "start"
       }
     },
     {
@@ -573,6 +573,78 @@
       "columns": [
         [
           "wrapping-up-next"
+        ]
+      ],
+      "props": {
+        "maxWidth": "xl"
+      }
+    },
+    {
+      "id": "editor-full-flat-points-solve-top",
+      "type": "stack",
+      "columns": [
+        [
+          "flat-points-solve-top"
+        ]
+      ],
+      "props": {
+        "maxWidth": "xl"
+      }
+    },
+    {
+      "id": "editor-full-flat-points-gradient-readout",
+      "type": "stack",
+      "columns": [
+        [
+          "flat-points-gradient-readout"
+        ]
+      ],
+      "props": {
+        "maxWidth": "xl"
+      }
+    },
+    {
+      "id": "editor-full-sign-test-bottom-line",
+      "type": "stack",
+      "columns": [
+        [
+          "sign-test-bottom-line"
+        ]
+      ],
+      "props": {
+        "maxWidth": "xl"
+      }
+    },
+    {
+      "id": "editor-full-sign-test-top-line-readout",
+      "type": "stack",
+      "columns": [
+        [
+          "sign-test-top-line-readout"
+        ]
+      ],
+      "props": {
+        "maxWidth": "xl"
+      }
+    },
+    {
+      "id": "editor-full-bend-readout",
+      "type": "stack",
+      "columns": [
+        [
+          "bend-readout"
+        ]
+      ],
+      "props": {
+        "maxWidth": "xl"
+      }
+    },
+    {
+      "id": "editor-full-asymptotes-height-readout",
+      "type": "stack",
+      "columns": [
+        [
+          "asymptotes-height-readout"
         ]
       ],
       "props": {
