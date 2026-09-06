@@ -25,9 +25,9 @@
     "bend-setup",
     "bend-second-derivative",
     "bend-stretches",
+    "bend-reading",
     "bend-visual",
     "bend-line-visual",
-    "bend-reading",
     "bend-question-candidate",
     "bend-question-nochange",
     "asymptotes-heading",
@@ -286,7 +286,8 @@
       "columns": [
         [
           "bend-second-derivative",
-          "bend-stretches"
+          "bend-stretches",
+          "bend-reading"
         ],
         [
           "bend-visual",
@@ -298,18 +299,6 @@
         "gap": "lg",
         "reverse": false,
         "align": "start"
-      }
-    },
-    {
-      "id": "layout-bend-reading",
-      "type": "stack",
-      "columns": [
-        [
-          "bend-reading"
-        ]
-      ],
-      "props": {
-        "maxWidth": "xl"
       }
     },
     {
