@@ -449,7 +449,7 @@ function BendPairFigure() {
         <Figure
             id="bend-pair-view"
             onReset={() => reset(setVar)}
-            caption="The curve and its bend line share one x. Drag either teal handle into each of the four stretches: the box fills with the sign of d²y/dx², the piece of curve above it firms up, and a red dot marks each cut where the two neighbouring signs disagree."
+            caption="Drag a teal handle into each stretch. Its box shows the sign of d²y/dx², and a red dot marks every cut where the sign flips."
         >
             <BendPairDrawing />
             <InteractionHintSequence
