@@ -124,12 +124,12 @@ const toCurveScreenY = (y: number) =>
 // The bend line keeps its own coordinates and is shifted down under the curve.
 const LINE_OFFSET = 236;
 const TRACK_Y = 36;
-const BOX_TOP = 64;
+const BOX_TOP = 66;
 const BOX_HEIGHT = 40;
 const BOX_WIDTH = 46;
-const RANGE_LABEL_Y = 122;
-const VERDICT_Y = 144;
-const FIGURE_HEIGHT = LINE_OFFSET + 156;
+const RANGE_LABEL_Y = 126;
+const VERDICT_Y = 150;
+const FIGURE_HEIGHT = LINE_OFFSET + 162;
 
 const stretchPath = (index: number) => {
     const from = STRETCH_EDGES[index];
@@ -203,14 +203,14 @@ function BendPairDrawing() {
 
             {/* ── above: the curve ── */}
             <g opacity={restDim} style={{ transition: "opacity 150ms ease-out" }}>
-                <text x={PAD_LEFT} y={20} fill={INK} fontSize="12">
+                <text x={PAD_LEFT} y={21} fill={INK} fontSize="15">
                     y = 2x / (1 + x²)
                 </text>
                 <text
                     x={VIEW_WIDTH - 24}
-                    y={20}
+                    y={21}
                     fill={colorForFamily(bendValue > 0 ? "concaveUp" : "concaveDown")}
-                    fontSize="12"
+                    fontSize="15"
                     textAnchor="end"
                     style={{ fontVariantNumeric: "tabular-nums" }}
                 >
@@ -352,16 +352,16 @@ function BendPairDrawing() {
                                 strokeWidth="1.5"
                                 strokeLinecap="round"
                             />
-                            <text x={toScreenX(cut)} y={TRACK_Y + 20} fill={STRUCTURE} fontSize="10" textAnchor="middle">
+                            <text x={toScreenX(cut)} y={TRACK_Y + 21} fill={STRUCTURE} fontSize="13" textAnchor="middle">
                                 {index === 0 ? "−√3" : index === 1 ? "0" : "√3"}
                             </text>
                         </g>
                     ))}
                     <text
                         x={labelCentre}
-                        y={TRACK_Y - 16}
+                        y={TRACK_Y - 17}
                         fill={INK}
-                        fontSize="12"
+                        fontSize="15"
                         textAnchor="middle"
                         style={{ fontVariantNumeric: "tabular-nums" }}
                     >
@@ -397,16 +397,16 @@ function BendPairDrawing() {
                             />
                             <text
                                 x={centre}
-                                y={BOX_TOP + 28}
+                                y={BOX_TOP + 29}
                                 fill={family ? color : STRUCTURE}
-                                fontSize={family ? 22 : 18}
+                                fontSize={family ? 26 : 22}
                                 fontWeight="600"
                                 textAnchor="middle"
                                 opacity={family ? 1 : 0.5}
                             >
                                 {family === "concaveUp" ? "+" : family === "concaveDown" ? "−" : "?"}
                             </text>
-                            <text x={centre} y={RANGE_LABEL_Y} fill={INK} fontSize="11" textAnchor="middle">
+                            <text x={centre} y={RANGE_LABEL_Y} fill={INK} fontSize="14" textAnchor="middle">
                                 {STRETCH_LABELS[index]}
                             </text>
                         </g>
@@ -423,7 +423,7 @@ function BendPairDrawing() {
                             x={toScreenX(cut)}
                             y={VERDICT_Y}
                             fill={INK}
-                            fontSize="10"
+                            fontSize="13"
                             fontWeight="600"
                             textAnchor="middle"
                             opacity={restDim}
