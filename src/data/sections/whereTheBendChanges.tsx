@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useRef, useState, type ReactElement } from "react";
+import { useCallback, useEffect, useRef, useState, type PointerEvent as ReactPointerEvent, type ReactElement } from "react";
 import { Block } from "@/components/templates";
 import { StackLayout } from "@/components/layouts";
 import {
@@ -29,15 +29,16 @@ import { CURVE_COLOR_MAP, signTerm } from "./curveColors";
 import { clamp } from "@/lib/motion";
 
 /* ────────────────────────────────────────────────────────────────────────────
- * A LINKED PAIR.
+ * ONE FIGURE, TWO VIEWS OF THE SAME x.
  *
  * Above: the curve y = 2x/(1 + x²), cut into four pieces at −√3, 0 and √3.
- * Below: the bend line, the same four stretches with a sign box each.
+ * Below, on the same x-mapping: the bend line, one sign box under each
+ * stretch, so a stretch sits directly above its own box.
  *
- * Both views read the SAME store variables — bendTestX, bendTestedValues and
- * bendHighlight — so neither tells the other anything; they simply agree. They
- * share one x-mapping, so a stretch sits directly above its own sign box, and
- * hovering either one pops its counterpart in the other view.
+ * Both handles write the SAME store variable, bendTestX, and both views read
+ * bendTestedValues and bendHighlight, so neither tells the other anything;
+ * they simply agree. A faint guide joins the dot on the curve to the marker
+ * on the line, and hovering a stretch in either view pops it in both.
  * ──────────────────────────────────────────────────────────────────────────── */
 
 const ROOT_THREE = Math.sqrt(3);
@@ -110,15 +111,24 @@ const reset = (setVar: (name: string, value: unknown) => void) => {
     setVar("bendTestedValues", []);
 };
 
-/* ── View A — the curve ──────────────────────────────────────────────────── */
+/* ── The figure ──────────────────────────────────────────────────────────── */
 
-const CURVE_HEIGHT = 250;
 const CURVE_TOP = 30;
 const CURVE_PLOT_HEIGHT = 190;
 const CURVE_Y_MIN = -1.15;
 const CURVE_Y_MAX = 1.15;
 const toCurveScreenY = (y: number) =>
     CURVE_TOP + ((CURVE_Y_MAX - y) / (CURVE_Y_MAX - CURVE_Y_MIN)) * CURVE_PLOT_HEIGHT;
+
+// The bend line keeps its own coordinates and is shifted down under the curve.
+const LINE_OFFSET = 236;
+const TRACK_Y = 36;
+const BOX_TOP = 64;
+const BOX_HEIGHT = 40;
+const BOX_WIDTH = 46;
+const RANGE_LABEL_Y = 122;
+const VERDICT_Y = 144;
+const FIGURE_HEIGHT = LINE_OFFSET + 156;
 
 const stretchPath = (index: number) => {
     const from = STRETCH_EDGES[index];
@@ -132,9 +142,10 @@ const stretchPath = (index: number) => {
     return `M ${points.join(" L ")}`;
 };
 
-function BendCurveDrawing() {
+function BendPairDrawing() {
     const { testX, tested, setVar, isActive, dimFor, restDim, hoverProps } = useBendState();
-    const [dragging, setDragging] = useState(false);
+    const [draggingDot, setDraggingDot] = useState(false);
+    const [draggingMarker, setDraggingMarker] = useState(false);
     const svgRef = useRef<SVGSVGElement>(null);
 
     // One source of truth: this effect is the only place a stretch is recorded.
@@ -156,23 +167,40 @@ function BendCurveDrawing() {
         [setVar],
     );
 
+    // The dot and the marker are the same control: 1:1 tracking of the pointer's x.
+    const handleProps = (dragging: boolean, setDragging: (value: boolean) => void) => ({
+        style: { cursor: dragging ? "grabbing" : "grab", touchAction: "none" as const },
+        onPointerDown: (event: ReactPointerEvent<SVGCircleElement>) => {
+            event.currentTarget.setPointerCapture(event.pointerId);
+            setDragging(true);
+        },
+        onPointerMove: (event: ReactPointerEvent<SVGCircleElement>) => {
+            if (dragging) updateFromPointer(event.clientX);
+        },
+        onPointerUp: () => setDragging(false),
+        onPointerCancel: () => setDragging(false),
+    });
+
     const dotX = toScreenX(testX);
     const dotY = toCurveScreenY(curveY(testX));
+    const markerY = LINE_OFFSET + TRACK_Y;
     const bendValue = secondDerivative(testX);
+    const labelCentre = clamp(dotX, PAD_LEFT + 30, VIEW_WIDTH - PAD_RIGHT - 30);
 
     return (
         <svg
             ref={svgRef}
-            viewBox={`0 0 ${VIEW_WIDTH} ${CURVE_HEIGHT}`}
+            viewBox={`0 0 ${VIEW_WIDTH} ${FIGURE_HEIGHT}`}
             className="block w-full"
             style={{ touchAction: "none" }}
         >
             <defs>
-                <filter id="bend-dot-shadow" x="-50%" y="-50%" width="200%" height="200%">
+                <filter id="bend-handle-shadow" x="-50%" y="-50%" width="200%" height="200%">
                     <feDropShadow dx="0" dy="1" stdDeviation="1.5" floodColor="#0F172A" floodOpacity="0.25" />
                 </filter>
             </defs>
 
+            {/* ── above: the curve ── */}
             <g opacity={restDim} style={{ transition: "opacity 150ms ease-out" }}>
                 <text x={PAD_LEFT} y={20} fill={INK} fontSize="12">
                     y = 2x / (1 + x²)
@@ -285,233 +313,152 @@ function BendCurveDrawing() {
                 })}
             </g>
 
+            {/* the tie between the views: one x, read on the curve and on the line;
+                the guide stops above the x readout so the two never cross */}
+            <line
+                x1={dotX}
+                y1={dotY}
+                x2={dotX}
+                y2={markerY - 30}
+                stroke={UP_COLOR}
+                strokeWidth="1.5"
+                strokeDasharray="3 5"
+                strokeLinecap="round"
+                opacity={0.55 * restDim}
+                style={{ transition: "opacity 150ms ease-out", pointerEvents: "none" }}
+            />
+
+            {/* ── below: the bend line ── */}
+            <g transform={`translate(0 ${LINE_OFFSET})`}>
+                <g opacity={restDim} style={{ transition: "opacity 150ms ease-out" }}>
+                    <line
+                        x1={PAD_LEFT}
+                        y1={TRACK_Y}
+                        x2={PAD_LEFT + PLOT_WIDTH}
+                        y2={TRACK_Y}
+                        stroke={RULE}
+                        strokeWidth="2"
+                        strokeLinecap="round"
+                    />
+                    {CUTS.map((cut, index) => (
+                        <g key={`bend-cut-${index}`}>
+                            <line
+                                x1={toScreenX(cut)}
+                                y1={TRACK_Y - 6}
+                                x2={toScreenX(cut)}
+                                y2={TRACK_Y + 6}
+                                stroke={STRUCTURE}
+                                strokeWidth="1.5"
+                                strokeLinecap="round"
+                            />
+                            <text x={toScreenX(cut)} y={TRACK_Y + 20} fill={STRUCTURE} fontSize="10" textAnchor="middle">
+                                {index === 0 ? "−√3" : index === 1 ? "0" : "√3"}
+                            </text>
+                        </g>
+                    ))}
+                    <text
+                        x={labelCentre}
+                        y={TRACK_Y - 16}
+                        fill={INK}
+                        fontSize="12"
+                        textAnchor="middle"
+                        style={{ fontVariantNumeric: "tabular-nums" }}
+                    >
+                        {`x = ${testX.toFixed(1)}`}
+                    </text>
+                    <circle cx={dotX} cy={TRACK_Y} r={draggingMarker ? 10.5 : 9} fill={UP_COLOR} filter="url(#bend-handle-shadow)" />
+                    <circle cx={dotX} cy={TRACK_Y} r={24} fill="transparent" {...handleProps(draggingMarker, setDraggingMarker)} />
+                </g>
+
+                {[0, 1, 2, 3].map((index) => {
+                    const family = familyForStretch(index, tested);
+                    const color = colorForFamily(family);
+                    const active = isActive(index);
+                    const centre = (toScreenX(STRETCH_EDGES[index]) + toScreenX(STRETCH_EDGES[index + 1])) / 2;
+                    return (
+                        <g
+                            key={`bend-box-${index}`}
+                            opacity={dimFor(index)}
+                            style={{ transition: "opacity 150ms ease-out" }}
+                            {...hoverProps(index)}
+                        >
+                            <rect
+                                x={centre - BOX_WIDTH / 2}
+                                y={BOX_TOP}
+                                width={BOX_WIDTH}
+                                height={BOX_HEIGHT}
+                                rx="6"
+                                fill={family ? color : "#FFFFFF"}
+                                fillOpacity={family ? (active ? 0.35 : 0.15) : 1}
+                                stroke={family ? color : UNTESTED_COLOR}
+                                strokeWidth={active ? 3 : 1.5}
+                                style={{ transition: "stroke-width 150ms ease-out, fill-opacity 150ms ease-out" }}
+                            />
+                            <text
+                                x={centre}
+                                y={BOX_TOP + 28}
+                                fill={family ? color : STRUCTURE}
+                                fontSize={family ? 22 : 18}
+                                fontWeight="600"
+                                textAnchor="middle"
+                                opacity={family ? 1 : 0.5}
+                            >
+                                {family === "concaveUp" ? "+" : family === "concaveDown" ? "−" : "?"}
+                            </text>
+                            <text x={centre} y={RANGE_LABEL_Y} fill={INK} fontSize="11" textAnchor="middle">
+                                {STRETCH_LABELS[index]}
+                            </text>
+                        </g>
+                    );
+                })}
+
+                {CUTS.map((cut, index) => {
+                    const leftFamily = familyForStretch(index, tested);
+                    const rightFamily = familyForStretch(index + 1, tested);
+                    if (!leftFamily || !rightFamily || leftFamily === rightFamily) return null;
+                    return (
+                        <text
+                            key={`verdict-${index}`}
+                            x={toScreenX(cut)}
+                            y={VERDICT_Y}
+                            fill={INK}
+                            fontSize="10"
+                            fontWeight="600"
+                            textAnchor="middle"
+                            opacity={restDim}
+                        >
+                            inflection
+                        </text>
+                    );
+                })}
+            </g>
+
+            {/* the dot on the curve, drawn last so it sits above the guide */}
             <g opacity={restDim} style={{ transition: "opacity 150ms ease-out" }}>
-                <circle cx={dotX} cy={dotY} r={dragging ? 10.5 : 9} fill={UP_COLOR} filter="url(#bend-dot-shadow)" />
-                <circle
-                    cx={dotX}
-                    cy={dotY}
-                    r={24}
-                    fill="transparent"
-                    style={{ cursor: dragging ? "grabbing" : "grab", touchAction: "none" }}
-                    onPointerDown={(event) => {
-                        event.currentTarget.setPointerCapture(event.pointerId);
-                        setDragging(true);
-                    }}
-                    onPointerMove={(event) => {
-                        if (dragging) updateFromPointer(event.clientX);
-                    }}
-                    onPointerUp={() => setDragging(false)}
-                    onPointerCancel={() => setDragging(false)}
-                />
+                <circle cx={dotX} cy={dotY} r={draggingDot ? 10.5 : 9} fill={UP_COLOR} filter="url(#bend-handle-shadow)" />
+                <circle cx={dotX} cy={dotY} r={24} fill="transparent" {...handleProps(draggingDot, setDraggingDot)} />
             </g>
         </svg>
     );
 }
 
-function BendCurveFigure() {
+function BendPairFigure() {
     const setVar = useSetVar();
     return (
         <Figure
-            id="bend-curve-view"
+            id="bend-pair-view"
             onReset={() => reset(setVar)}
-            caption="The curve, cut into four pieces at −√3, 0 and √3. A piece stays faint and dashed until its stretch has been tested, and a red dot appears at each point of inflection as soon as its two neighbouring signs disagree."
+            caption="The curve and its bend line share one x. Drag either teal handle into each of the four stretches: the box fills with the sign of d²y/dx², the piece of curve above it firms up, and a red dot marks each cut where the two neighbouring signs disagree."
         >
-            <BendCurveDrawing />
+            <BendPairDrawing />
             <InteractionHintSequence
-                hintKey="bend-curve-drag"
+                hintKey="bend-pair-drag"
                 steps={[
                     {
                         gesture: "drag-horizontal",
                         label: "Drag the teal dot along the curve",
-                        position: { x: "14%", y: "62%" },
+                        position: { x: "14%", y: "40%" },
                         dragPath: { type: "line", startOffset: { x: -8, y: 0 }, endOffset: { x: 32, y: -10 } },
-                    },
-                ]}
-            />
-        </Figure>
-    );
-}
-
-/* ── View B — the bend line ──────────────────────────────────────────────── */
-
-const LINE_HEIGHT = 160;
-const TRACK_Y = 36;
-const BOX_TOP = 64;
-const BOX_HEIGHT = 40;
-const BOX_WIDTH = 46;
-const RANGE_LABEL_Y = 122;
-const VERDICT_Y = 144;
-
-function BendLineDrawing() {
-    const { testX, tested, setVar, isActive, dimFor, restDim, hoverProps } = useBendState();
-    const [dragging, setDragging] = useState(false);
-    const svgRef = useRef<SVGSVGElement>(null);
-
-    const updateFromPointer = useCallback(
-        (clientX: number) => {
-            const svg = svgRef.current;
-            if (!svg) return;
-            const rect = svg.getBoundingClientRect();
-            const localX = ((clientX - rect.left) / rect.width) * VIEW_WIDTH;
-            const mathX = X_MIN + ((localX - PAD_LEFT) / PLOT_WIDTH) * (X_MAX - X_MIN);
-            setVar("bendTestX", Math.round(clamp(mathX, -3, 3) * 10) / 10);
-        },
-        [setVar],
-    );
-
-    const markerX = toScreenX(testX);
-    const labelCentre = clamp(markerX, PAD_LEFT + 30, VIEW_WIDTH - PAD_RIGHT - 30);
-
-    return (
-        <svg
-            ref={svgRef}
-            viewBox={`0 0 ${VIEW_WIDTH} ${LINE_HEIGHT}`}
-            className="block w-full"
-            style={{ touchAction: "none" }}
-        >
-            <defs>
-                <filter id="bend-marker-shadow" x="-50%" y="-50%" width="200%" height="200%">
-                    <feDropShadow dx="0" dy="1" stdDeviation="1.5" floodColor="#0F172A" floodOpacity="0.25" />
-                </filter>
-            </defs>
-
-            <g opacity={restDim} style={{ transition: "opacity 150ms ease-out" }}>
-                <line
-                    x1={PAD_LEFT}
-                    y1={TRACK_Y}
-                    x2={PAD_LEFT + PLOT_WIDTH}
-                    y2={TRACK_Y}
-                    stroke={RULE}
-                    strokeWidth="2"
-                    strokeLinecap="round"
-                />
-                {CUTS.map((cut, index) => (
-                    <g key={`bend-cut-${index}`}>
-                        <line
-                            x1={toScreenX(cut)}
-                            y1={TRACK_Y - 6}
-                            x2={toScreenX(cut)}
-                            y2={TRACK_Y + 6}
-                            stroke={STRUCTURE}
-                            strokeWidth="1.5"
-                            strokeLinecap="round"
-                        />
-                        <text x={toScreenX(cut)} y={TRACK_Y + 20} fill={STRUCTURE} fontSize="10" textAnchor="middle">
-                            {index === 0 ? "−√3" : index === 1 ? "0" : "√3"}
-                        </text>
-                    </g>
-                ))}
-                <text
-                    x={labelCentre}
-                    y={TRACK_Y - 16}
-                    fill={INK}
-                    fontSize="12"
-                    textAnchor="middle"
-                    style={{ fontVariantNumeric: "tabular-nums" }}
-                >
-                    {`x = ${testX.toFixed(1)}`}
-                </text>
-                <circle cx={markerX} cy={TRACK_Y} r={dragging ? 10.5 : 9} fill={UP_COLOR} filter="url(#bend-marker-shadow)" />
-                <circle
-                    cx={markerX}
-                    cy={TRACK_Y}
-                    r={24}
-                    fill="transparent"
-                    style={{ cursor: dragging ? "grabbing" : "grab", touchAction: "none" }}
-                    onPointerDown={(event) => {
-                        event.currentTarget.setPointerCapture(event.pointerId);
-                        setDragging(true);
-                    }}
-                    onPointerMove={(event) => {
-                        if (dragging) updateFromPointer(event.clientX);
-                    }}
-                    onPointerUp={() => setDragging(false)}
-                    onPointerCancel={() => setDragging(false)}
-                />
-            </g>
-
-            {[0, 1, 2, 3].map((index) => {
-                const family = familyForStretch(index, tested);
-                const color = colorForFamily(family);
-                const active = isActive(index);
-                const centre = (toScreenX(STRETCH_EDGES[index]) + toScreenX(STRETCH_EDGES[index + 1])) / 2;
-                return (
-                    <g
-                        key={`bend-box-${index}`}
-                        opacity={dimFor(index)}
-                        style={{ transition: "opacity 150ms ease-out" }}
-                        {...hoverProps(index)}
-                    >
-                        <rect
-                            x={centre - BOX_WIDTH / 2}
-                            y={BOX_TOP}
-                            width={BOX_WIDTH}
-                            height={BOX_HEIGHT}
-                            rx="6"
-                            fill={family ? color : "#FFFFFF"}
-                            fillOpacity={family ? (active ? 0.35 : 0.15) : 1}
-                            stroke={family ? color : UNTESTED_COLOR}
-                            strokeWidth={active ? 3 : 1.5}
-                            style={{ transition: "stroke-width 150ms ease-out, fill-opacity 150ms ease-out" }}
-                        />
-                        <text
-                            x={centre}
-                            y={BOX_TOP + 28}
-                            fill={family ? color : STRUCTURE}
-                            fontSize={family ? 22 : 18}
-                            fontWeight="600"
-                            textAnchor="middle"
-                            opacity={family ? 1 : 0.5}
-                        >
-                            {family === "concaveUp" ? "+" : family === "concaveDown" ? "−" : "?"}
-                        </text>
-                        <text x={centre} y={RANGE_LABEL_Y} fill={INK} fontSize="11" textAnchor="middle">
-                            {STRETCH_LABELS[index]}
-                        </text>
-                    </g>
-                );
-            })}
-
-            {CUTS.map((cut, index) => {
-                const leftFamily = familyForStretch(index, tested);
-                const rightFamily = familyForStretch(index + 1, tested);
-                if (!leftFamily || !rightFamily || leftFamily === rightFamily) return null;
-                return (
-                    <text
-                        key={`verdict-${index}`}
-                        x={toScreenX(cut)}
-                        y={VERDICT_Y}
-                        fill={INK}
-                        fontSize="10"
-                        fontWeight="600"
-                        textAnchor="middle"
-                        opacity={restDim}
-                    >
-                        inflection
-                    </text>
-                );
-            })}
-        </svg>
-    );
-}
-
-function BendLineFigure() {
-    const setVar = useSetVar();
-    return (
-        <Figure
-            id="bend-sign-line"
-            onReset={() => reset(setVar)}
-            caption="Drag the teal marker into a stretch and its box fills with the sign of d²y/dx², while the matching piece of curve above firms up. Where two neighbouring signs disagree, the cut between them is a point of inflection."
-        >
-            <BendLineDrawing />
-            <InteractionHintSequence
-                hintKey="bend-line-drag"
-                steps={[
-                    {
-                        gesture: "drag-horizontal",
-                        label: "Drag the marker into each stretch",
-                        position: { x: "14%", y: "26%" },
-                        dragPath: { type: "line", startOffset: { x: -10, y: 0 }, endOffset: { x: 34, y: 0 } },
                     },
                 ]}
             />
@@ -609,15 +556,9 @@ export const whereTheBendChangesBlocks: ReactElement[] = [
         </Block>
     </StackLayout>,
 
-    <StackLayout key="layout-bend-curve-view" maxWidth="xl">
+    <StackLayout key="layout-bend-visual" maxWidth="xl">
         <Block id="bend-visual" padding="sm" hasVisualization>
-            <BendCurveFigure />
-        </Block>
-    </StackLayout>,
-
-    <StackLayout key="layout-bend-line-view" maxWidth="xl">
-        <Block id="bend-line-visual" padding="sm" hasVisualization>
-            <BendLineFigure />
+            <BendPairFigure />
         </Block>
     </StackLayout>,
 
@@ -657,6 +598,58 @@ export const whereTheBendChangesBlocks: ReactElement[] = [
                 </InlineLinkedHighlight>{" "}
                 where it is minus. All three candidates flip, so all three really are points of
                 inflection.
+            </EditableParagraph>
+        </Block>
+    </StackLayout>,
+
+    <StackLayout key="layout-bend-question-region" maxWidth="xl">
+        <Block id="bend-question-region" padding="md">
+            <EditableParagraph id="para-bend-question-region" blockId="bend-question-region">
+                Read one stretch straight off the figure. Between{" "}
+                <InlineFormula
+                    id="formula-bend-region-stretch"
+                    latex="\clr{termLevel}{x = -\sqrt3}"
+                    colorMap={CURVE_COLOR_MAP}
+                />
+                {" "}and{" "}
+                <InlineFormula
+                    id="formula-bend-region-zero"
+                    latex="\clr{termLevel}{x = 0}"
+                    colorMap={CURVE_COLOR_MAP}
+                />
+                {" "}the curve is concave{" "}
+                <InlineFeedback
+                    varName="answerBendRegion"
+                    correctValue="up"
+                    position="terminal"
+                    successMessage="— right. Drop the marker into that stretch and its box shows a plus: the bend is positive there, so the curve holds water"
+                    failureMessage="— not that way."
+                    hint="The box under that stretch already knows the answer: drop the marker between −√3 and 0 and read its sign"
+                    visualizationHint={{
+                        blockId: "bend-visual",
+                        hintKey: "feedback-bend-region",
+                        label: "Find it on the figure",
+                        resetVars: { bendTestX: -3, bendHighlight: "" },
+                        steps: [
+                            {
+                                gesture: "drag-horizontal",
+                                label: "Drag the marker right, past −√3, into the next stretch — its box fills with a plus and the curve above it firms up",
+                                position: { x: "39%", y: "62%" },
+                                dragPath: { type: "line", startOffset: { x: -34, y: 0 }, endOffset: { x: 24, y: 0 } },
+                                completionVar: "bendTestX",
+                                completionValue: -0.9,
+                                completionTolerance: 0.8,
+                            },
+                        ],
+                    }}
+                >
+                    <InlineClozeChoice
+                        varName="answerBendRegion"
+                        correctAnswer="up"
+                        options={["up", "down"]}
+                        {...choicePropsFromDefinition(getVariableInfo('answerBendRegion'))}
+                    />
+                </InlineFeedback>.
             </EditableParagraph>
         </Block>
     </StackLayout>,
@@ -725,7 +718,7 @@ export const whereTheBendChangesBlocks: ReactElement[] = [
                     failureMessage="— look again at the two test values."
                     hint="Both tests came out as +12, so compare the two signs rather than the two positions"
                     visualizationHint={{
-                        blockId: "bend-line-visual",
+                        blockId: "bend-visual",
                         hintKey: "feedback-bend-no-change",
                         label: "Discover it yourself",
                         resetVars: { bendTestX: -3, bendHighlight: "" },
@@ -733,7 +726,7 @@ export const whereTheBendChangesBlocks: ReactElement[] = [
                             {
                                 gesture: "drag-horizontal",
                                 label: "Leave the marker in the far left stretch — that box holds a minus",
-                                position: { x: "18%", y: "26%" },
+                                position: { x: "18%", y: "62%" },
                                 completionVar: "bendTestX",
                                 completionValue: -2.5,
                                 completionTolerance: 0.7,
@@ -741,7 +734,7 @@ export const whereTheBendChangesBlocks: ReactElement[] = [
                             {
                                 gesture: "drag-horizontal",
                                 label: "Drag it right past −√3 — the sign turns to a plus, and that swap is what an inflection needs",
-                                position: { x: "38%", y: "26%" },
+                                position: { x: "38%", y: "62%" },
                                 completionVar: "bendTestX",
                                 completionValue: -1,
                                 completionTolerance: 0.6,

@@ -27,7 +27,7 @@
     "bend-stretches",
     "bend-reading",
     "bend-visual",
-    "bend-line-visual",
+    "bend-question-region",
     "bend-question-candidate",
     "bend-question-nochange",
     "asymptotes-heading",
@@ -290,8 +290,7 @@
           "bend-reading"
         ],
         [
-          "bend-visual",
-          "bend-line-visual"
+          "bend-visual"
         ]
       ],
       "props": {
@@ -299,6 +298,18 @@
         "gap": "lg",
         "reverse": false,
         "align": "start"
+      }
+    },
+    {
+      "id": "layout-bend-question-region",
+      "type": "stack",
+      "columns": [
+        [
+          "bend-question-region"
+        ]
+      ],
+      "props": {
+        "maxWidth": "xl"
       }
     },
     {

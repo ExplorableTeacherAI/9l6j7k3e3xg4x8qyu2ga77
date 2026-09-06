@@ -202,6 +202,17 @@ export const variableDefinitions: Record<string, VariableDefinition> = {
         color: '#3B82F6',
         bgColor: 'rgba(59, 130, 246, 0.15)',
     },
+    answerBendRegion: {
+        defaultValue: '',
+        type: 'select',
+        label: 'Concavity between -root 3 and 0',
+        description: 'Which way the curve bends in the stretch between -√3 and 0, read off its sign box',
+        placeholder: '???',
+        correctAnswer: 'up',
+        options: ['up', 'down'],
+        color: '#3B82F6',
+        bgColor: 'rgba(59, 130, 246, 0.15)',
+    },
     // ─────────────────────────────────────────
     // SECTION: Synthesising the Complete Sketch
     // ─────────────────────────────────────────
@@ -319,15 +330,15 @@ export const variableDefinitions: Record<string, VariableDefinition> = {
         defaultValue: '',
         type: 'spotColor',
         label: 'Top line of the fraction',
-        description: 'Coral — the numerator, which is where the flat points come from',
-        color: '#F4A89A',
+        description: 'Deep coral — the numerator, which is where the flat points come from',
+        color: '#E07A5F',
     },
     termBottomLine: {
         defaultValue: '',
         type: 'spotColor',
         label: 'Bottom line of the fraction',
         description: 'Violet — the denominator, which is where asymptotes come from',
-        color: '#AC8BF9',
+        color: '#8B5CF6',
     },
     termGradient: {
         defaultValue: '',

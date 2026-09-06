@@ -12,9 +12,9 @@ export const CURVE_COLOR_MAP: Record<string, string> = {
     /** the curve itself */
     termCurve: '#334155',
     /** the top line of a fraction — where the flat points come from */
-    termTopLine: '#F4A89A',
+    termTopLine: '#E07A5F',
     /** the bottom line of a fraction — where the asymptotes come from */
-    termBottomLine: '#AC8BF9',
+    termBottomLine: '#8B5CF6',
     /** dy/dx, climbing, a positive gradient, a maximum */
     termGradient: '#62D0AD',
     /** a negative gradient, a minimum, bending downward */
