@@ -300,7 +300,8 @@
           "bend-stretches"
         ],
         [
-          "bend-visual"
+          "bend-visual",
+          "bend-line-visual"
         ]
       ],
       "props": {
@@ -308,18 +309,6 @@
         "gap": "lg",
         "reverse": false,
         "align": "start"
-      }
-    },
-    {
-      "id": "layout-bend-line-view",
-      "type": "stack",
-      "columns": [
-        [
-          "bend-line-visual"
-        ]
-      ],
-      "props": {
-        "maxWidth": "xl"
       }
     },
     {
